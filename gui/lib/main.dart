@@ -11,6 +11,8 @@ import 'dart:io';
 import 'settings_page.dart';
 import 'config_service.dart';
 import 'update_service.dart';
+import 'window_poller.dart';
+import 'dart:async';
 
 final ValueNotifier<UpdateInfo?> globalUpdateNotifier = ValueNotifier(null);
 
@@ -57,6 +59,8 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
   final AppWindow _appWindow = AppWindow();
   final SystemTray _systemTray = SystemTray();
   final Menu _menu = Menu();
+  Timer? _pollerTimer;
+  VnxConfig _currentConfig = const VnxConfig();
 
   @override
   void initState() {
@@ -66,11 +70,40 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
     
     ConfigService.instance.startWatching();
     ConfigService.instance.configStream.listen((config) {
+      _currentConfig = config;
       _updateTrayIcon(config.enabled);
       _rebuildTrayMenu(config);
     });
 
+    ConfigService.instance.readConfig().then((config) {
+      _currentConfig = config;
+    });
+
+    _startActiveWindowPoller();
     _checkForUpdates();
+  }
+
+  void _startActiveWindowPoller() {
+    _pollerTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+      if (_currentConfig.excludedApps.isEmpty) return;
+      
+      final activeClass = await WindowPoller.getActiveWindowClass();
+      if (activeClass.isEmpty) return;
+
+      bool isExcluded = _currentConfig.excludedApps.any((app) => 
+        app.toLowerCase() == activeClass.toLowerCase());
+
+      final file = File('/dev/shm/vnxkey_excluded');
+      try {
+        final currentContent = await file.exists() ? await file.readAsString() : '';
+        final newContent = isExcluded ? '1' : '0';
+        if (currentContent != newContent) {
+          await file.writeAsString(newContent);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
   }
 
   void _checkForUpdates() async {
@@ -84,6 +117,7 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
 
   @override
   void dispose() {
+    _pollerTimer?.cancel();
     windowManager.removeListener(this);
     ConfigService.instance.stopWatching();
     super.dispose();

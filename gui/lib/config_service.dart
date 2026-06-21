@@ -25,6 +25,7 @@ class VnxConfig {
 
   // Hệ thống
   final bool startup;
+  final List<String> excludedApps;
 
   const VnxConfig({
     this.enabled = true,
@@ -40,6 +41,7 @@ class VnxConfig {
     this.disableNonUs = false,
 
     this.startup = false,
+    this.excludedApps = const [],
   });
 
   VnxConfig copyWith({
@@ -54,6 +56,7 @@ class VnxConfig {
     bool? spellcheck,
     bool? disableNonUs,
     bool? startup,
+    List<String>? excludedApps,
   }) {
     return VnxConfig(
       enabled: enabled ?? this.enabled,
@@ -67,6 +70,7 @@ class VnxConfig {
       spellcheck: spellcheck ?? this.spellcheck,
       disableNonUs: disableNonUs ?? this.disableNonUs,
       startup: startup ?? this.startup,
+      excludedApps: excludedApps ?? this.excludedApps,
     );
   }
 
@@ -82,6 +86,7 @@ class VnxConfig {
     'spellcheck': spellcheck,
     'disable_non_us': disableNonUs,
     'startup': startup,
+    'excluded_apps': excludedApps,
   };
 
   factory VnxConfig.fromJson(Map<String, dynamic> json) {
@@ -97,6 +102,7 @@ class VnxConfig {
       spellcheck: json['spellcheck'] as bool? ?? false,
       disableNonUs: json['disable_non_us'] as bool? ?? false,
       startup: json['startup'] as bool? ?? false,
+      excludedApps: (json['excluded_apps'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 }

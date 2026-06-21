@@ -263,6 +263,44 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         const SizedBox(height: 24),
+
+        // Cài đặt ngoại trừ
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Danh sách ứng dụng ngoại trừ (Excluded Apps)',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Nhập WM_CLASS của ứng dụng để tự động tắt tiếng Việt khi ứng dụng đó đang mở (cách nhau bởi dấu phẩy). VD: gnome-terminal, code, alacritty',
+                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: _config.excludedApps.join(', '),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'gnome-terminal, alacritty...',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  onChanged: (val) {
+                    final apps = val.split(',')
+                        .map((e) => e.trim())
+                        .where((e) => e.isNotEmpty)
+                        .toList();
+                    _updateConfig(_config.copyWith(excludedApps: apps));
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }

@@ -20,6 +20,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <atomic>
 #include <set>
@@ -472,6 +473,24 @@ int main(int argc, char* argv[]) {
 
                 if (ch == 0) {
                     // Không phải ASCII (F1, Home, mũi tên...) → passthrough
+                    uinput.emit_key(kev.keycode, kev.value);
+                    continue;
+                }
+
+                // Đọc trạng thái excluded apps từ tmpfs (do GUI ghi xuống)
+                bool is_excluded = false;
+                std::ifstream ext_file("/dev/shm/vnxkey_excluded");
+                if (ext_file.is_open()) {
+                    std::string content;
+                    ext_file >> content;
+                    if (content == "1") {
+                        is_excluded = true;
+                    }
+                }
+
+                if (is_excluded) {
+                    // Nếu cửa sổ đang active bị ngoại trừ, bỏ qua buffer và gửi phím trực tiếp
+                    engine.reset();
                     uinput.emit_key(kev.keycode, kev.value);
                     continue;
                 }
