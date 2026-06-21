@@ -157,7 +157,20 @@ void UinputHandler::emit_backspace() {
 }
 
 void UinputHandler::emit_backspace(int count) {
-    for (int i = 0; i < count; i++) {
+    if (count <= 0) return;
+
+    // --- WORKAROUND FOR OMNIBOX/AUTOCOMPLETE HIGHLIGHT ---
+    // If the browser (like Chrome) has highlighted auto-complete text,
+    // the first Backspace will ONLY delete the highlight, NOT the character.
+    // To safely clear any highlight before our real backspaces, we send a dummy printable character
+    // (KEY_A) and immediately backspace it. This forces the highlight to be overwritten and cleared.
+    emit_key(KEY_A, 1);
+    emit_key(KEY_A, 0);
+    emit_key(KEY_BACKSPACE, 1);
+    emit_key(KEY_BACKSPACE, 0);
+    // -----------------------------------------------------
+
+    for (int i = 0; i < count; ++i) {
         emit_backspace();
     }
 }
