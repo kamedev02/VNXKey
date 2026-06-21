@@ -296,7 +296,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
                 if (shift) send_event(EV_KEY, KEY_LEFTSHIFT, 0);
                 sync();
                 
-                usleep(5000); // 5ms delay like a normal keypress
+                usleep(10000); // 10ms delay (tăng từ 5ms để an toàn hơn cho terminal)
                 continue;
             }
         }
@@ -338,6 +338,6 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         sync();
         send_event(EV_KEY, KEY_SPACE, 0);
         sync();
-        usleep(10000); // 10ms để GTK có đủ thời gian reset IM context trước khi nhận ký tự tiếp theo
+        usleep(30000); // 30ms để Terminal/GTK có đủ thời gian reset IM context trước khi nhận ký tự tiếp theo
     }
 }
