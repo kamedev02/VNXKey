@@ -256,7 +256,14 @@ log_section "Copy packaging files"
 if [ -f "$PACKAGING_DIR/usr/share/applications/vnxkey.desktop" ]; then
     cp "$PACKAGING_DIR/usr/share/applications/vnxkey.desktop" \
        "$STAGING_DIR/usr/share/applications/"
-    log_success "Desktop entry copied"
+    
+    # Tạo autostart entry để app tự khởi động (chế độ ẩn) cùng hệ thống
+    mkdir -p "$STAGING_DIR/etc/xdg/autostart"
+    sed 's/Exec=\/usr\/bin\/vnxkey-gui/Exec=\/usr\/bin\/vnxkey-gui --autostart/' \
+        "$PACKAGING_DIR/usr/share/applications/vnxkey.desktop" \
+        > "$STAGING_DIR/etc/xdg/autostart/vnxkey.desktop"
+        
+    log_success "Desktop & Autostart entries copied"
 fi
 
 # Copyright

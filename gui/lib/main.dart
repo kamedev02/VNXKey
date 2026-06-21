@@ -11,7 +11,7 @@ import 'dart:io';
 import 'settings_page.dart';
 import 'config_service.dart';
 
-void main() async {
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Khởi tạo window manager
@@ -27,10 +27,16 @@ void main() async {
     titleBarStyle: TitleBarStyle.normal,
   );
 
+  bool isAutostart = args.contains('--autostart');
+
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.setPreventClose(true);
-    await windowManager.show();
-    await windowManager.focus();
+    if (!isAutostart) {
+      await windowManager.show();
+      await windowManager.focus();
+    } else {
+      await windowManager.hide();
+    }
   });
 
   runApp(const VnxKeyApp());
