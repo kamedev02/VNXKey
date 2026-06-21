@@ -307,6 +307,7 @@ int main(int argc, char* argv[]) {
     // Simple polling loop
     bool currently_grabbed = true;
     LastEvent last_event;
+    bool ctrl_shift_ready = false;
 
     while (g_running.load(std::memory_order_relaxed)) {
         bool em_stop = g_emergency_stop.load(std::memory_order_relaxed);
@@ -348,6 +349,32 @@ int main(int argc, char* argv[]) {
                 // Key release (value=0)
                 if (kev.value == 0) {
                     physical_pressed_keys.erase(kev.keycode);
+                    
+                    bool was_ctrl_shift = (kev.keycode == KEY_LEFTSHIFT || kev.keycode == KEY_RIGHTSHIFT || 
+                                           kev.keycode == KEY_LEFTCTRL || kev.keycode == KEY_RIGHTCTRL);
+
+                    // Check release trigger for Ctrl+Shift
+                    if (was_ctrl_shift && ctrl_shift_ready) {
+                        std::string current_shortcut;
+                        {
+                            std::lock_guard<std::mutex> lock(g_config_mutex);
+                            current_shortcut = g_current_config.toggle_shortcut;
+                        }
+                        if (current_shortcut == "Ctrl+Shift") {
+                            std::cout << "[vnxkey] Toggle shortcut (Ctrl+Shift) triggered on release!" << std::endl;
+                            VnxConfig new_cfg;
+                            {
+                                std::lock_guard<std::mutex> lock(g_config_mutex);
+                                new_cfg = g_current_config;
+                            }
+                            new_cfg.enabled = !new_cfg.enabled;
+                            config_watcher.write_config(new_cfg);
+                        }
+                    }
+                    if (was_ctrl_shift) {
+                        ctrl_shift_ready = false;
+                    }
+
                     if (kev.keycode == KEY_LEFTSHIFT || kev.keycode == KEY_RIGHTSHIFT) {
                         shift_pressed = false;
                     } else if (kev.keycode == KEY_LEFTCTRL || kev.keycode == KEY_RIGHTCTRL) {
@@ -379,6 +406,20 @@ int main(int argc, char* argv[]) {
 
                 // Shortcut Toggle (E/V) interception
                 if (kev.value == 1) { // Only on key press
+                    if (is_modifier) {
+                        if (ctrl_pressed && shift_pressed && !alt_pressed) {
+                            if (physical_pressed_keys.size() == 2) {
+                                ctrl_shift_ready = true;
+                            } else {
+                                ctrl_shift_ready = false;
+                            }
+                        } else {
+                            ctrl_shift_ready = false;
+                        }
+                    } else {
+                        ctrl_shift_ready = false;
+                    }
+
                     bool shortcut_triggered = false;
                     std::string current_shortcut;
                     {
@@ -386,11 +427,7 @@ int main(int argc, char* argv[]) {
                         current_shortcut = g_current_config.toggle_shortcut;
                     }
                     
-                    if (current_shortcut == "Ctrl+Shift" && 
-                        ((ctrl_pressed && (kev.keycode == KEY_LEFTSHIFT || kev.keycode == KEY_RIGHTSHIFT)) ||
-                         (shift_pressed && (kev.keycode == KEY_LEFTCTRL || kev.keycode == KEY_RIGHTCTRL)))) {
-                        shortcut_triggered = true;
-                    } else if (current_shortcut == "Alt+Z" && alt_pressed && kev.keycode == KEY_Z) {
+                    if (current_shortcut == "Alt+Z" && alt_pressed && kev.keycode == KEY_Z) {
                         shortcut_triggered = true;
                     } else if (current_shortcut == "Ctrl+Space" && ctrl_pressed && kev.keycode == KEY_SPACE) {
                         shortcut_triggered = true;
@@ -407,10 +444,8 @@ int main(int argc, char* argv[]) {
                         new_cfg.enabled = !new_cfg.enabled;
                         config_watcher.write_config(new_cfg);
                         
-                        if (current_shortcut != "Ctrl+Shift") {
-                            // consume key for Alt+Z and Ctrl+Space
-                            continue;
-                        }
+                        // consume key for Alt+Z and Ctrl+Space
+                        continue;
                     }
                 }
 
