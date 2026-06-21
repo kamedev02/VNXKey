@@ -22,6 +22,12 @@ struct VnxConfig {
     std::string output_charset = "unicode"; ///< "unicode"
     std::string toggle_shortcut = "Ctrl+Shift"; ///< "Ctrl+Shift", "Alt+Z", "Ctrl+Space"
     bool emergency_stop = false;     ///< Dừng khẩn cấp: nhả hoàn toàn bàn phím
+    bool allow_fjwz = true;
+    bool auto_cap = false;
+    bool standard_send_key = true;
+    bool spellcheck = false;
+    bool disable_non_us = false;
+    bool startup = false;
 };
 
 /**

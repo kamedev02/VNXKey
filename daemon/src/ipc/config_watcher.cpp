@@ -117,6 +117,24 @@ VnxConfig ConfigWatcher::parse_json(const std::string& json) const {
         cfg.toggle_shortcut = shortcut;
     }
 
+    std::string allow_fjwz_str = json_get_value(json, "allow_fjwz");
+    if (!allow_fjwz_str.empty()) cfg.allow_fjwz = (allow_fjwz_str == "true" || allow_fjwz_str == "1");
+
+    std::string auto_cap_str = json_get_value(json, "auto_cap");
+    if (!auto_cap_str.empty()) cfg.auto_cap = (auto_cap_str == "true" || auto_cap_str == "1");
+
+    std::string standard_send_key_str = json_get_value(json, "standard_send_key");
+    if (!standard_send_key_str.empty()) cfg.standard_send_key = (standard_send_key_str == "true" || standard_send_key_str == "1");
+
+    std::string spellcheck_str = json_get_value(json, "spellcheck");
+    if (!spellcheck_str.empty()) cfg.spellcheck = (spellcheck_str == "true" || spellcheck_str == "1");
+
+    std::string disable_non_us_str = json_get_value(json, "disable_non_us");
+    if (!disable_non_us_str.empty()) cfg.disable_non_us = (disable_non_us_str == "true" || disable_non_us_str == "1");
+
+    std::string startup_str = json_get_value(json, "startup");
+    if (!startup_str.empty()) cfg.startup = (startup_str == "true" || startup_str == "1");
+
     return cfg;
 }
 
@@ -155,7 +173,13 @@ void ConfigWatcher::write_config(const VnxConfig& cfg) const {
          << "  \"input_method\": \"" << cfg.input_method << "\",\n"
          << "  \"output_charset\": \"" << cfg.output_charset << "\",\n"
          << "  \"toggle_shortcut\": \"" << cfg.toggle_shortcut << "\",\n"
-         << "  \"emergency_stop\": " << (cfg.emergency_stop ? "true" : "false") << "\n"
+         << "  \"emergency_stop\": " << (cfg.emergency_stop ? "true" : "false") << ",\n"
+         << "  \"allow_fjwz\": " << (cfg.allow_fjwz ? "true" : "false") << ",\n"
+         << "  \"auto_cap\": " << (cfg.auto_cap ? "true" : "false") << ",\n"
+         << "  \"standard_send_key\": " << (cfg.standard_send_key ? "true" : "false") << ",\n"
+         << "  \"spellcheck\": " << (cfg.spellcheck ? "true" : "false") << ",\n"
+         << "  \"disable_non_us\": " << (cfg.disable_non_us ? "true" : "false") << ",\n"
+         << "  \"startup\": " << (cfg.startup ? "true" : "false") << "\n"
          << "}\n";
 }
 
