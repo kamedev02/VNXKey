@@ -8,6 +8,9 @@ on:
   # Hoặc build thủ công từ GitHub Actions UI
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-deb:
     name: Build .deb Package
@@ -61,6 +64,8 @@ jobs:
           if ! git diff-index --quiet HEAD; then
             git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
             git push
+            git tag "v${{ steps.version.outputs.version }}"
+            git push origin "v${{ steps.version.outputs.version }}"
           fi
 
       # ── Flutter pub get ──
