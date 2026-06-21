@@ -2,7 +2,7 @@ name: vnxkey
 description: "VNXKey - Vietnamese Input Method Manager"
 publish_to: 'none'
 
-version: 26.06.004
+version: 26.06.005
 
 environment:
   sdk: ^3.12.2
