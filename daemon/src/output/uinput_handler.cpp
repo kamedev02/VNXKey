@@ -281,10 +281,11 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
             }
         }
 
-        // Enter để confirm
-        send_event(EV_KEY, KEY_ENTER, 1);
+        // Dùng SPACE để confirm thay vì ENTER để tránh nguy cơ tự động chạy lệnh
+        // nếu ứng dụng (như Terminal) không hỗ trợ tính năng Ctrl+Shift+U của GTK.
+        send_event(EV_KEY, KEY_SPACE, 1);
         sync();
-        send_event(EV_KEY, KEY_ENTER, 0);
+        send_event(EV_KEY, KEY_SPACE, 0);
         sync();
         usleep(1000); // Giảm từ 5ms xuống 1ms
     }
