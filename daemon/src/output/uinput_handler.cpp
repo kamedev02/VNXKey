@@ -215,6 +215,29 @@ static int hex_char_to_keycode(char c) {
     }
 }
 
+static int basic_ascii_to_keycode(char c, bool& shift) {
+    shift = false;
+    if (c >= 'A' && c <= 'Z') { shift = true; c += 32; }
+    
+    switch (c) {
+        case 'a': return KEY_A; case 'b': return KEY_B; case 'c': return KEY_C;
+        case 'd': return KEY_D; case 'e': return KEY_E; case 'f': return KEY_F;
+        case 'g': return KEY_G; case 'h': return KEY_H; case 'i': return KEY_I;
+        case 'j': return KEY_J; case 'k': return KEY_K; case 'l': return KEY_L;
+        case 'm': return KEY_M; case 'n': return KEY_N; case 'o': return KEY_O;
+        case 'p': return KEY_P; case 'q': return KEY_Q; case 'r': return KEY_R;
+        case 's': return KEY_S; case 't': return KEY_T; case 'u': return KEY_U;
+        case 'v': return KEY_V; case 'w': return KEY_W; case 'x': return KEY_X;
+        case 'y': return KEY_Y; case 'z': return KEY_Z;
+        case '0': return KEY_0; case '1': return KEY_1; case '2': return KEY_2;
+        case '3': return KEY_3; case '4': return KEY_4; case '5': return KEY_5;
+        case '6': return KEY_6; case '7': return KEY_7; case '8': return KEY_8;
+        case '9': return KEY_9;
+        case ' ': return KEY_SPACE;
+        default: return -1;
+    }
+}
+
 std::vector<uint32_t> UinputHandler::utf8_to_codepoints(const std::string& utf8) {
     std::vector<uint32_t> codepoints;
     size_t i = 0;
@@ -258,6 +281,26 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
     if (codepoints.empty()) return;
 
     for (uint32_t cp : codepoints) {
+        if (cp < 0x80) {
+            bool shift = false;
+            int kc = basic_ascii_to_keycode(static_cast<char>(cp), shift);
+            if (kc >= 0) {
+                if (shift) send_event(EV_KEY, KEY_LEFTSHIFT, 1);
+                sync();
+                
+                send_event(EV_KEY, static_cast<uint16_t>(kc), 1);
+                sync();
+                send_event(EV_KEY, static_cast<uint16_t>(kc), 0);
+                sync();
+                
+                if (shift) send_event(EV_KEY, KEY_LEFTSHIFT, 0);
+                sync();
+                
+                usleep(5000); // 5ms delay like a normal keypress
+                continue;
+            }
+        }
+        
         // Chuyển codepoint sang hex string
         std::ostringstream oss;
         oss << std::hex << cp;
@@ -295,6 +338,6 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         sync();
         send_event(EV_KEY, KEY_SPACE, 0);
         sync();
-        usleep(1000); // Giảm từ 5ms xuống 1ms
+        usleep(10000); // 10ms để GTK có đủ thời gian reset IM context trước khi nhận ký tự tiếp theo
     }
 }
