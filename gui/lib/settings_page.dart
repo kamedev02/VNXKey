@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -24,6 +25,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isCheckingUpdate = false;
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
+
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -100,6 +103,12 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -289,11 +298,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   ),
                   onChanged: (val) {
-                    final apps = val.split(',')
-                        .map((e) => e.trim())
-                        .where((e) => e.isNotEmpty)
-                        .toList();
-                    _updateConfig(_config.copyWith(excludedApps: apps));
+                    if (_debounce?.isActive ?? false) _debounce!.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 1000), () {
+                      final apps = val.split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
+                      _updateConfig(_config.copyWith(excludedApps: apps));
+                    });
                   },
                 ),
               ],
@@ -483,7 +495,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               );
                             }
                           },
-                          icon: const Icon(CupertinoIcons.cloud_download),
+                          icon: const Icon(Icons.cloud_download),
                           label: const Text('Cập nhật ngay'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF22C55E),
