@@ -23,6 +23,7 @@ gui/linux/flutter/generated_plugins.cmake
 
 # Releases / Packages
 dist/
+build/
 
 # IDE / Editor
 .idea/

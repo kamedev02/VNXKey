@@ -172,11 +172,9 @@ void UinputHandler::emit_backspace(int count) {
     // If the browser (like Chrome) has highlighted auto-complete text,
     // the first Backspace will ONLY delete the highlight, NOT the character.
     // To safely clear any highlight before our real backspaces, we send a dummy printable character
-    // (KEY_A) and immediately backspace it. This forces the highlight to be overwritten and cleared.
-    emit_key(KEY_A, 1);
-    emit_key(KEY_A, 0);
-    emit_key(KEY_BACKSPACE, 1);
-    emit_key(KEY_BACKSPACE, 0);
+    // (KEY_SPACE) and immediately backspace it. This forces the highlight to be overwritten and cleared.
+    emit_key(KEY_SPACE);
+    emit_key(KEY_BACKSPACE);
     // -----------------------------------------------------
 
     for (int i = 0; i < count; ++i) {
@@ -287,7 +285,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
                 sync();
                 send_event(EV_KEY, static_cast<uint16_t>(kc), 0);
                 sync();
-                usleep(500); // Giảm từ 5ms xuống 0.5ms
+                usleep(2000); // Tăng lên 2ms để tránh Wayland drop phím khi gõ hex dài (như 1b0)
             }
         }
 
