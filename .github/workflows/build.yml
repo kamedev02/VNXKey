@@ -29,14 +29,15 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # ── Cài C++ build dependencies ──
-      - name: Install C++ dependencies
+      # ── Cài build dependencies ──
+      - name: Install dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
             build-essential cmake pkg-config \
             libevdev-dev libevdev2 \
             libgtk-3-dev libblkid-dev liblzma-dev \
+            libayatana-appindicator3-dev \
             ninja-build clang \
             fakeroot dpkg-dev
 
@@ -62,8 +63,10 @@ jobs:
           git add VERSION gui/pubspec.yaml daemon/CMakeLists.txt
           # Chỉ commit nếu có thay đổi
           if ! git diff-index --quiet HEAD; then
+            # Thoát khỏi trạng thái detached HEAD của Github Checkout
+            git checkout ${{ github.ref_name }}
             git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
-            git push
+            git push origin ${{ github.ref_name }}
             git tag "v${{ steps.version.outputs.version }}"
             git push origin "v${{ steps.version.outputs.version }}"
           fi
