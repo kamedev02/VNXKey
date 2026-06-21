@@ -1,0 +1,120 @@
+name: Build & Release VNXKey .deb
+
+# Trigger khi push/merge vào nhánh release
+on:
+  push:
+    branches:
+      - release
+  # Hoặc build thủ công từ GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    name: Build .deb Package
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ── Checkout source ──
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Setup Flutter ──
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+          channel: 'stable'
+          cache: true
+
+      # ── Cài C++ build dependencies ──
+      - name: Install C++ dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential cmake pkg-config \
+            libevdev-dev libevdev2 \
+            libgtk-3-dev libblkid-dev liblzma-dev \
+            ninja-build clang \
+            fakeroot dpkg-dev
+
+      # ── Build .deb ──
+      - name: Build .deb package
+        run: |
+          chmod +x scripts/build-release.sh
+          ./scripts/build-release.sh
+
+      # ── Lấy version đã sinh ra ──
+      - name: Get generated version
+        id: version
+        run: |
+          VERSION=$(cat VERSION)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      # ── Commit version bump ──
+      - name: Commit version bump
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION gui/pubspec.yaml daemon/CMakeLists.txt
+          # Chỉ commit nếu có thay đổi
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
+            git push
+          fi
+
+      # ── Flutter pub get ──
+      - name: Flutter pub get
+        run: |
+          cd gui
+          flutter pub get
+
+      # ── Chạy unit tests (C++) ──
+      - name: Run C++ Engine Tests
+        run: |
+          mkdir -p daemon/build-test
+          cmake -B daemon/build-test -S daemon -DCMAKE_BUILD_TYPE=Debug
+          cmake --build daemon/build-test --target vnxkey-engine-test -j$(nproc)
+          ./daemon/build-test/vnxkey-engine-test
+
+      # ── Upload artifact (cho mọi build) ──
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vnxkey-deb-${{ steps.version.outputs.version }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+      # ── Tạo GitHub Release ──
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: VNXKey v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: dist/*.deb
+          body: |
+            ## VNXKey v${{ steps.version.outputs.version }}
+
+            ### Cài đặt
+
+            ```bash
+            # Tải .deb và cài:
+            wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/vnxkey_${{ steps.version.outputs.version }}_amd64.deb
+            sudo dpkg -i vnxkey_${{ steps.version.outputs.version }}_amd64.deb
+            sudo apt-get install -f  # Fix dependencies
+
+            # Kiểm tra daemon:
+            systemctl status vnxkey
+
+            # Chạy GUI:
+            vnxkey-gui
+            ```
+
+            ### Yêu cầu hệ thống
+            - Ubuntu 22.04+ / Debian 12+
+            - x86_64 (amd64)
+            - systemd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

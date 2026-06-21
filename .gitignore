@@ -1,0 +1,35 @@
+# VNXKey - Gitignore
+
+# C/C++ Build
+daemon/build*/
+daemon/CMakeCache.txt
+daemon/CMakeFiles/
+daemon/Makefile
+daemon/cmake_install.cmake
+daemon/*.o
+daemon/*.a
+
+# Flutter GUI
+gui/build/
+gui/.dart_tool/
+gui/.flutter-plugins
+gui/.flutter-plugins-dependencies
+gui/.pub-cache/
+gui/.pub/
+gui/linux/flutter/ephemeral/
+gui/linux/flutter/generated_plugin_registrant.cc
+gui/linux/flutter/generated_plugin_registrant.h
+gui/linux/flutter/generated_plugins.cmake
+
+# Releases / Packages
+dist/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Scripts
+*.log

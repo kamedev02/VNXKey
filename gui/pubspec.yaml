@@ -1,0 +1,40 @@
+name: vnxkey
+description: "VNXKey - Vietnamese Input Method Manager"
+publish_to: 'none'
+
+version: 26.06.004
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # System tray icon
+  system_tray: ^2.0.3
+
+  # Window management
+  window_manager: ^0.4.3
+
+  # File/JSON operations
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.5
+
+  # App Info
+  package_info_plus: ^8.0.0
+
+  # UI & Styling
+  google_fonts: ^6.1.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
+    - assets/logo/
+

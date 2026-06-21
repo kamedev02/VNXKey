@@ -1,0 +1,20 @@
+Package: vnxkey
+Version: 0.1.0-1
+Architecture: amd64
+Maintainer: VNXKey Team <maintainer@vnxkey.dev>
+Installed-Size: INSTALLED_SIZE_PLACEHOLDER
+Depends: libevdev2 (>= 1.0), libc6 (>= 2.17)
+Recommends: vnxkey-gui
+Section: utils
+Priority: optional
+Homepage: https://github.com/vnxkey/vnxkey
+Description: VNXKey - Vietnamese Input Method for Linux
+ Kernel-level Vietnamese input method daemon that intercepts keyboard
+ events via evdev and outputs Vietnamese characters (Telex/VNI).
+ .
+ Features:
+  - No IBus/Fcitx5 required
+  - Works on both X11 and Wayland
+  - Telex and VNI input methods
+  - Real-time config via JSON + inotify
+  - System tray settings GUI (vnxkey-gui)

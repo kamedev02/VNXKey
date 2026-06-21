@@ -1,0 +1,65 @@
+#!/bin/bash
+# postinst - Chạy sau khi dpkg cài xong package
+# Tham khảo: https://www.debian.org/doc/debian-policy/ch-maintainerscripts.html
+
+set -e
+
+DAEMON_BIN="/usr/lib/vnxkey/vnxkey-daemon"
+SERVICE_NAME="vnxkey"
+
+case "$1" in
+    configure)
+        echo "[vnxkey] Configuring VNXKey..."
+
+        # 1. Thêm uinput module vào /etc/modules-load.d/ để load lúc boot
+        if [ ! -f /etc/modules-load.d/vnxkey.conf ]; then
+            echo "uinput" > /etc/modules-load.d/vnxkey.conf
+            echo "[vnxkey] Added uinput to modules-load.d"
+        fi
+
+        # 2. Load uinput module ngay lập tức (nếu chưa load)
+        if ! lsmod | grep -q "^uinput"; then
+            modprobe uinput 2>/dev/null || echo "[vnxkey] WARNING: Cannot load uinput module"
+        fi
+
+        # 3. Thiết lập udev rule để daemon truy cập /dev/uinput không cần root
+        #    (chạy qua systemd User=root nên không cần, nhưng để đây cho tương lai)
+        UDEV_RULE="/etc/udev/rules.d/99-vnxkey.rules"
+        if [ ! -f "$UDEV_RULE" ]; then
+            cat > "$UDEV_RULE" << 'EOF'
+# VNXKey: cho phép group 'input' truy cập uinput
+KERNEL=="uinput", GROUP="input", MODE="0660"
+EOF
+            udevadm control --reload-rules 2>/dev/null || true
+            echo "[vnxkey] Added udev rules"
+        fi
+
+        # 4. Reload systemd daemon để nhận service file mới
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload
+            echo "[vnxkey] systemd daemon reloaded"
+
+            # 5. Enable service (tự động start lúc boot)
+            systemctl enable "${SERVICE_NAME}.service" 2>/dev/null || true
+            echo "[vnxkey] Service enabled"
+
+            # 6. Start service ngay (có thể thất bại nếu chưa có bàn phím)
+            systemctl start "${SERVICE_NAME}.service" 2>/dev/null || \
+                echo "[vnxkey] Note: Service start deferred (run 'sudo systemctl start vnxkey' manually)"
+        fi
+
+        echo "[vnxkey] Installation complete!"
+        echo "[vnxkey] To start GUI: vnxkey-gui"
+        echo "[vnxkey] To check daemon: systemctl status vnxkey"
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

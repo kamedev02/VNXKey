@@ -1,0 +1,36 @@
+#!/bin/bash
+# prerm - Chạy TRƯỚC khi dpkg gỡ package
+# QUAN TRỌNG: Phải stop daemon TRƯỚC khi xóa files
+# Nếu không, daemon có thể đang grab bàn phím → bàn phím bị treo!
+
+set -e
+
+SERVICE_NAME="vnxkey"
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        echo "[vnxkey] Stopping VNXKey daemon before removal..."
+
+        if command -v systemctl >/dev/null 2>&1; then
+            # Stop service TRƯỚC (và ungrab keyboard)
+            if systemctl is-active --quiet "${SERVICE_NAME}.service" 2>/dev/null; then
+                systemctl stop "${SERVICE_NAME}.service" || true
+                echo "[vnxkey] Daemon stopped (keyboard restored)"
+            fi
+
+            # Disable auto-start
+            systemctl disable "${SERVICE_NAME}.service" 2>/dev/null || true
+            echo "[vnxkey] Service disabled"
+        fi
+        ;;
+
+    failed-upgrade)
+        ;;
+
+    *)
+        echo "prerm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

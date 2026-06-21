@@ -1,0 +1,54 @@
+#!/bin/bash
+# postrm - Chạy SAU khi dpkg xóa package
+
+set -e
+
+case "$1" in
+    remove)
+        echo "[vnxkey] Cleaning up VNXKey..."
+
+        # Reload systemd để xóa service đã biết
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload 2>/dev/null || true
+        fi
+
+        # Xóa udev rule
+        if [ -f /etc/udev/rules.d/99-vnxkey.rules ]; then
+            rm -f /etc/udev/rules.d/99-vnxkey.rules
+            udevadm control --reload-rules 2>/dev/null || true
+            echo "[vnxkey] Removed udev rules"
+        fi
+
+        # Xóa modules-load.d entry
+        if [ -f /etc/modules-load.d/vnxkey.conf ]; then
+            rm -f /etc/modules-load.d/vnxkey.conf
+            echo "[vnxkey] Removed modules-load.d entry"
+        fi
+
+        echo "[vnxkey] Cleanup complete."
+        echo "[vnxkey] Note: User config at ~/.config/vnxkey/ was NOT removed."
+        ;;
+
+    purge)
+        # purge: xóa cả user config (chỉ root config, không xóa user config)
+        echo "[vnxkey] Purging VNXKey system files..."
+
+        # Xóa udev rule nếu còn
+        rm -f /etc/udev/rules.d/99-vnxkey.rules 2>/dev/null || true
+        rm -f /etc/modules-load.d/vnxkey.conf 2>/dev/null || true
+
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload 2>/dev/null || true
+        fi
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

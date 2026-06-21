@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VNXKey
+Name[vi]=VNXKey - Bộ gõ Tiếng Việt
+GenericName=Vietnamese Input Method
+GenericName[vi]=Bộ gõ Tiếng Việt
+Comment=Settings for VNXKey Vietnamese Input Method
+Comment[vi]=Cài đặt bộ gõ tiếng Việt VNXKey
+Exec=vnxkey-gui
+Icon=vnxkey
+Terminal=false
+Categories=Utility;Accessibility;Settings;
+Keywords=Vietnamese;Input;Keyboard;Telex;VNI;Tiếng Việt;
+StartupNotify=true
+StartupWMClass=vnxkey
+X-GNOME-Autostart-enabled=false

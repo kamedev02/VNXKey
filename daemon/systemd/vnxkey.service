@@ -1,0 +1,48 @@
+[Unit]
+Description=VNXKey Vietnamese Input Method Daemon
+Documentation=https://github.com/vnxkey/vnxkey
+# Đảm bảo keyboard subsystem đã sẵn sàng trước khi start
+After=systemd-udevd.service
+Wants=systemd-udevd.service
+
+[Service]
+Type=simple
+
+# Daemon binary tại /usr/lib/vnxkey/ (không phải /usr/bin vì end-user không gọi thẳng)
+ExecStart=/usr/lib/vnxkey/vnxkey-daemon
+
+# Restart tự động khi crash (không restart khi stop bằng systemctl)
+Restart=on-failure
+RestartSec=3s
+
+# Chạy với quyền root (cần để grab /dev/input/* và write /dev/uinput)
+User=root
+Group=root
+
+# Yêu cầu systemd tạo thư mục /run/vnxkey với quyền truy cập
+RuntimeDirectory=vnxkey
+RuntimeDirectoryMode=0755
+
+
+# ── Security Hardening ──
+# Giới hạn quyền tối đa có thể dùng (chỉ giữ lại những gì cần)
+# Daemon cần: đọc /dev/input, ghi /dev/uinput
+NoNewPrivileges=false   # Cần false vì binary phải chạy với root
+PrivateTmp=true         # /tmp riêng
+ProtectHome=read-only   # Chỉ đọc $HOME (để đọc ~/.config/vnxkey)
+ProtectSystem=strict    # Không ghi vào /usr, /boot, etc.
+# Cho phép ghi config dir và /run/vnxkey
+ReadWritePaths=/home /run/vnxkey
+PrivateDevices=false    # Cần false để truy cập /dev/input và /dev/uinput
+
+# ── Logging ──
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vnxkey
+
+# ── Environment ──
+# Config file path
+Environment=VNXKEY_CONFIG=/home/%u/.config/vnxkey/config.json
+
+[Install]
+WantedBy=multi-user.target
