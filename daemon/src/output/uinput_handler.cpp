@@ -65,6 +65,15 @@ bool UinputHandler::create_device() {
         destroy_device();
         return false;
     }
+    
+    // Add EV_REP to be recognized as a real keyboard by libinput/Wayland
+    ioctl(m_fd, UI_SET_EVBIT, EV_REP);
+    
+    // Add EV_LED for CapsLock/NumLock recognition
+    ioctl(m_fd, UI_SET_EVBIT, EV_LED);
+    ioctl(m_fd, UI_SET_LEDBIT, LED_NUML);
+    ioctl(m_fd, UI_SET_LEDBIT, LED_CAPSL);
+    ioctl(m_fd, UI_SET_LEDBIT, LED_SCROLLL);
 
     // Đăng ký tất cả keycodes thông dụng (0 đến KEY_MAX)
     for (int key = 0; key <= KEY_MAX; key++) {
@@ -260,6 +269,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         send_event(EV_KEY, KEY_LEFTCTRL, 1);
         send_event(EV_KEY, KEY_LEFTSHIFT, 1);
         sync();
+        usleep(1000); // Ensure modifier state is processed by the OS
         send_event(EV_KEY, KEY_U, 1);
         sync();
         send_event(EV_KEY, KEY_U, 0);
