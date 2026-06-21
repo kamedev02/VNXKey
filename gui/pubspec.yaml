@@ -26,6 +26,9 @@ dependencies:
 
   # UI & Styling
   google_fonts: ^6.1.0
+  http: ^1.6.0
+  dio: ^5.9.2
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

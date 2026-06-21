@@ -10,6 +10,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'settings_page.dart';
 import 'config_service.dart';
+import 'update_service.dart';
+
+final ValueNotifier<UpdateInfo?> globalUpdateNotifier = ValueNotifier(null);
+
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +69,17 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
       _updateTrayIcon(config.enabled);
       _rebuildTrayMenu(config);
     });
+
+    _checkForUpdates();
+  }
+
+  void _checkForUpdates() async {
+    final update = await UpdateService.instance.checkUpdate();
+    if (update != null) {
+      globalUpdateNotifier.value = update;
+      final config = await ConfigService.instance.readConfig();
+      _rebuildTrayMenu(config);
+    }
   }
 
   @override
@@ -107,7 +122,24 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
   }
 
   Future<void> _rebuildTrayMenu(VnxConfig config) async {
-    await _menu.buildFrom([
+    final update = globalUpdateNotifier.value;
+    
+    List<MenuItemBase> items = [];
+    
+    if (update != null) {
+      items.addAll([
+        MenuItemLabel(
+          label: '🚀 Cập nhật bản ${update.version}!',
+          onClicked: (menuItem) {
+            _appWindow.show();
+            windowManager.focus();
+          },
+        ),
+        MenuSeparator(),
+      ]);
+    }
+
+    items.addAll([
       MenuItemLabel(
         label: config.enabled ? 'Đang bật: Tiếng Việt' : 'Đang bật: Tiếng Anh',
         onClicked: (menuItem) async {
@@ -139,6 +171,8 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
         exit(0);
       }),
     ]);
+    
+    await _menu.buildFrom(items);
     await _systemTray.setContextMenu(_menu);
   }
 
