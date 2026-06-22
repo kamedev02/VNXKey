@@ -90,13 +90,24 @@ class _SettingsPageState extends State<SettingsPage> {
               // Lệnh dừng service (yêu cầu polkit để hỏi pass)
               try {
                 // Hiển thị loading overlay nếu cần thiết
-                await Process.run('pkexec', ['systemctl', 'stop', 'vnxkey']);
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  exit(0);
-                });
+                final result = await Process.run('pkexec', ['systemctl', 'stop', 'vnxkey']);
+                if (result.exitCode == 0) {
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    exit(0);
+                  });
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Lỗi dừng dịch vụ: ${result.stderr}')),
+                    );
+                  }
+                }
               } catch (e) {
-                // Ignore
-                exit(0);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi: $e')),
+                  );
+                }
               }
             },
             child: const Text('Thoát', style: TextStyle(color: Colors.red)),
@@ -127,14 +138,24 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await Process.run('pkexec', ['systemctl', 'restart', 'vnxkey']);
+                final result = await Process.run('pkexec', ['systemctl', 'restart', 'vnxkey']);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã khởi động lại dịch vụ!')),
-                  );
+                  if (result.exitCode == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã khởi động lại dịch vụ!')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Lỗi: ${result.stderr}')),
+                    );
+                  }
                 }
               } catch (e) {
-                // Ignore
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi hệ thống: $e')),
+                  );
+                }
               }
             },
             child: const Text('Khởi động lại', style: TextStyle(color: Colors.blue)),
