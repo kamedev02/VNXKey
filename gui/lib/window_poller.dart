@@ -13,7 +13,18 @@ if [ "\$WAYLAND_DISPLAY" ]; then
   fi
   if command -v gdbus &> /dev/null; then
     # GNOME Window Calls Extension fallback
-    gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/Windows --method org.gnome.Shell.Extensions.Windows.GetActiveWindow 2>/dev/null | grep -oP '(?<="wm_class": ")[^"]+' || echo ""
+    result=\$(gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/Windows --method org.gnome.Shell.Extensions.Windows.GetActiveWindow 2>/dev/null | grep -oP '(?<="wm_class": ")[^"]+')
+    if [ -n "\$result" ]; then
+      echo "\$result"
+      exit 0
+    fi
+    # GNOME Window Calls Extended fallback
+    result=\$(gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/WindowsExt --method org.gnome.Shell.Extensions.WindowsExt.FocusWindow 2>/dev/null | grep -oP '(?<="wm_class": ")[^"]+')
+    if [ -n "\$result" ]; then
+      echo "\$result"
+      exit 0
+    fi
+    echo ""
   fi
 else
   if command -v xprop &> /dev/null; then
