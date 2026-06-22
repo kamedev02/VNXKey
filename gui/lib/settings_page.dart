@@ -368,6 +368,34 @@ class _SettingsPageState extends State<SettingsPage> {
                     });
                   },
                 ),
+                const SizedBox(height: 16),
+                if (Platform.environment['WAYLAND_DISPLAY'] != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Trên GNOME Wayland, cần cài Extension để tính năng này hoạt động.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Process.run('xdg-open', ['https://extensions.gnome.org/extension/4136/window-calls-extended/']);
+                          },
+                          child: const Text('Cài Extension'),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
