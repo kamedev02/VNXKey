@@ -318,7 +318,9 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         send_event(EV_KEY, KEY_LEFTSHIFT, 0);
         send_event(EV_KEY, KEY_LEFTCTRL, 0);
         sync();
-        usleep(2000); // Giảm từ 10ms xuống 2ms để nhanh hơn
+        // QUAN TRỌNG: Phải chờ đủ lâu (khoảng 10-15ms) để GTK/Mutter kích hoạt trạng thái "Unicode Input Mode"
+        // Nếu gõ hex quá nhanh ngay sau khi nhả Ctrl+Shift+U, GTK sẽ không nhận diện kịp và in thẳng hex code ra màn hình (ví dụ: 1eef)
+        usleep(15000); 
 
         // Gõ từng ký tự hex
         for (char hc : hex) {
