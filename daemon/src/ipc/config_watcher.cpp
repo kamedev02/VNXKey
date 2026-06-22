@@ -15,11 +15,12 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <filesystem>
+#include <iostream>
 #include <cstring>
-#include <cerrno>
 #include <unistd.h>
+#include <filesystem>
 #include <sys/inotify.h>
+#include <regex>
 
 // ============================================================
 // Constructor / Destructor
@@ -162,25 +163,41 @@ VnxConfig ConfigWatcher::read_config() const {
 }
 
 void ConfigWatcher::write_config(const VnxConfig& cfg) const {
+    std::ifstream in(m_config_path);
+    std::string content;
+    if (in.is_open()) {
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        content = ss.str();
+        in.close();
+    }
+    
     std::ofstream file(m_config_path);
     if (!file.is_open()) {
         std::cerr << "[config] ERROR writing to config file" << std::endl;
         return;
     }
-    // Very simple JSON generation, assume string values do not contain quotes
-    file << "{\n"
-         << "  \"enabled\": " << (cfg.enabled ? "true" : "false") << ",\n"
-         << "  \"input_method\": \"" << cfg.input_method << "\",\n"
-         << "  \"output_charset\": \"" << cfg.output_charset << "\",\n"
-         << "  \"toggle_shortcut\": \"" << cfg.toggle_shortcut << "\",\n"
-         << "  \"emergency_stop\": " << (cfg.emergency_stop ? "true" : "false") << ",\n"
-         << "  \"allow_fjwz\": " << (cfg.allow_fjwz ? "true" : "false") << ",\n"
-         << "  \"auto_cap\": " << (cfg.auto_cap ? "true" : "false") << ",\n"
-         << "  \"standard_send_key\": " << (cfg.standard_send_key ? "true" : "false") << ",\n"
-         << "  \"spellcheck\": " << (cfg.spellcheck ? "true" : "false") << ",\n"
-         << "  \"disable_non_us\": " << (cfg.disable_non_us ? "true" : "false") << ",\n"
-         << "  \"startup\": " << (cfg.startup ? "true" : "false") << "\n"
-         << "}\n";
+
+    if (!content.empty() && content.find("\"enabled\"") != std::string::npos) {
+        // [WORKING][CRITICAL] Regex replacement to preserve excludedApps and other new fields - DO NOT MODIFY UNLESS NECESSARY
+        std::regex e_regex("\"enabled\"\\s*:\\s*(true|false)");
+        content = std::regex_replace(content, e_regex, "\"enabled\": " + std::string(cfg.enabled ? "true" : "false"));
+        file << content;
+    } else {
+        file << "{\n"
+             << "  \"enabled\": " << (cfg.enabled ? "true" : "false") << ",\n"
+             << "  \"input_method\": \"" << cfg.input_method << "\",\n"
+             << "  \"output_charset\": \"" << cfg.output_charset << "\",\n"
+             << "  \"toggle_shortcut\": \"" << cfg.toggle_shortcut << "\",\n"
+             << "  \"emergency_stop\": " << (cfg.emergency_stop ? "true" : "false") << ",\n"
+             << "  \"allow_fjwz\": " << (cfg.allow_fjwz ? "true" : "false") << ",\n"
+             << "  \"auto_cap\": " << (cfg.auto_cap ? "true" : "false") << ",\n"
+             << "  \"standard_send_key\": " << (cfg.standard_send_key ? "true" : "false") << ",\n"
+             << "  \"spellcheck\": " << (cfg.spellcheck ? "true" : "false") << ",\n"
+             << "  \"disable_non_us\": " << (cfg.disable_non_us ? "true" : "false") << ",\n"
+             << "  \"startup\": " << (cfg.startup ? "true" : "false") << "\n"
+             << "}\n";
+    }
 }
 
 // ============================================================

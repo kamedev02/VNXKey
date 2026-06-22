@@ -361,7 +361,7 @@ int main(int argc, char* argv[]) {
                     bool was_ctrl_shift = (kev.keycode == KEY_LEFTSHIFT || kev.keycode == KEY_RIGHTSHIFT || 
                                            kev.keycode == KEY_LEFTCTRL || kev.keycode == KEY_RIGHTCTRL);
 
-                    // Check release trigger for Ctrl+Shift
+                    // [WORKING][CRITICAL] Check release trigger for Ctrl+Shift (E/V Toggle) - DO NOT MODIFY UNLESS NECESSARY
                     if (was_ctrl_shift && ctrl_shift_ready) {
                         std::string current_shortcut;
                         {
@@ -412,7 +412,7 @@ int main(int argc, char* argv[]) {
                     engine.reset();
                 }
 
-                // Shortcut Toggle (E/V) interception
+                // [WORKING][CRITICAL] Shortcut Toggle (E/V) interception - DO NOT MODIFY UNLESS NECESSARY
                 if (kev.value == 1) { // Only on key press
                     if (is_modifier) {
                         if (ctrl_pressed && shift_pressed && !alt_pressed) {
@@ -484,7 +484,7 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
 
-                // Đọc trạng thái excluded apps từ tmpfs (do GUI ghi xuống)
+                // [WORKING][CRITICAL] Đọc trạng thái excluded apps từ tmpfs (do GUI ghi xuống) - DO NOT MODIFY UNLESS NECESSARY
                 bool is_excluded = false;
                 std::ifstream ext_file("/dev/shm/vnxkey_excluded");
                 if (ext_file.is_open()) {

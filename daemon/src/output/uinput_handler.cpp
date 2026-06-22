@@ -281,6 +281,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
     if (codepoints.empty()) return;
 
     for (uint32_t cp : codepoints) {
+        // [WORKING][CRITICAL] Bypass Ctrl+Shift+U for basic ASCII characters (120 WPM fix) - DO NOT MODIFY UNLESS NECESSARY
         if (cp < 0x80) {
             bool shift = false;
             int kc = basic_ascii_to_keycode(static_cast<char>(cp), shift);
@@ -320,6 +321,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         sync();
         // QUAN TRỌNG: Phải chờ đủ lâu (khoảng 10-15ms) để GTK/Mutter kích hoạt trạng thái "Unicode Input Mode"
         // Nếu gõ hex quá nhanh ngay sau khi nhả Ctrl+Shift+U, GTK sẽ không nhận diện kịp và in thẳng hex code ra màn hình (ví dụ: 1eef)
+        // [WORKING][CRITICAL] 15ms delay cho GTK4/Terminal - DO NOT MODIFY UNLESS NECESSARY
         usleep(15000); 
 
         // Gõ từng ký tự hex
