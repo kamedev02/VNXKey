@@ -24,6 +24,7 @@
 #include <chrono>
 #include <atomic>
 #include <set>
+#include <algorithm>
 #include <csignal>
 #include <thread>
 #include <unistd.h>
@@ -309,6 +310,8 @@ int main(int argc, char* argv[]) {
     bool currently_grabbed = true;
     LastEvent last_event;
     bool ctrl_shift_ready = false;
+    
+    auto last_hotplug_scan = std::chrono::steady_clock::now();
 
     while (g_running.load(std::memory_order_relaxed)) {
         bool em_stop = g_emergency_stop.load(std::memory_order_relaxed);
@@ -329,16 +332,20 @@ int main(int argc, char* argv[]) {
             // Discard pending events khi đang emergency stop
             for (auto& evdev : evdev_list) {
                 KeyEvent kev;
-                while (evdev->read_event(kev)) {} 
+                while (evdev->read_event(kev) == ReadStatus::HAS_EVENT) {} 
             }
             continue;
         }
 
         bool got_any_event = false;
         
-        for (auto& evdev : evdev_list) {
+        for (auto it = evdev_list.begin(); it != evdev_list.end(); ) {
+            auto& evdev = *it;
             KeyEvent kev;
-            while (evdev->read_event(kev)) {
+            ReadStatus status;
+            bool device_removed = false;
+
+            while ((status = evdev->read_event(kev)) == ReadStatus::HAS_EVENT) {
                 got_any_event = true;
 
                 // Deduplicate events giống nhau (do có nhiều interface cho cùng 1 bàn phím vật lý)
@@ -530,8 +537,52 @@ int main(int argc, char* argv[]) {
                             break;
                     }
                 }
+            } // end while read_event
+
+            if (status == ReadStatus::DISCONNECTED) {
+                // Xoá pointer khỏi g_evdev_ptrs trước
+                g_evdev_ptrs.erase(
+                    std::remove(g_evdev_ptrs.begin(), g_evdev_ptrs.end(), evdev.get()),
+                    g_evdev_ptrs.end()
+                );
+                // Xoá khỏi evdev_list
+                it = evdev_list.erase(it);
+                device_removed = true;
+            }
+
+            if (!device_removed) {
+                ++it;
+            }
+        } // end for evdev_list
+
+        // --- Bắt đầu phần Hotplug (2 giây một lần) ---
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_hotplug_scan).count() >= 2) {
+            last_hotplug_scan = now;
+            auto new_kb_paths = EvdevHandler::find_keyboards();
+            for (const auto& path : new_kb_paths) {
+                bool found = false;
+                for (const auto& existing : evdev_list) {
+                    if (existing->get_device_path() == path) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    std::cout << "[vnxkey] Hotplug detected new keyboard: " << path << std::endl;
+                    auto new_evdev = std::make_unique<EvdevHandler>();
+                    if (new_evdev->open_device(path)) {
+                        if (currently_grabbed && !new_evdev->grab()) {
+                            std::cerr << "[vnxkey] WARNING: Cannot grab new keyboard " << path << std::endl;
+                        } else {
+                            g_evdev_ptrs.push_back(new_evdev.get());
+                            evdev_list.push_back(std::move(new_evdev));
+                        }
+                    }
+                }
             }
         }
+        // --- Kết thúc phần Hotplug ---
 
         if (!got_any_event) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));

@@ -47,6 +47,7 @@ EvdevHandler::EvdevHandler(EvdevHandler&& other) noexcept
     : m_fd(other.m_fd)
     , m_dev(other.m_dev)
     , m_is_grabbed(other.m_is_grabbed)
+    , m_path(std::move(other.m_path))
 {
     // Transfer ownership - old object không còn manage resource nữa
     other.m_fd = -1;
@@ -62,6 +63,7 @@ EvdevHandler& EvdevHandler::operator=(EvdevHandler&& other) noexcept {
         m_fd = other.m_fd;
         m_dev = other.m_dev;
         m_is_grabbed = other.m_is_grabbed;
+        m_path = std::move(other.m_path);
         other.m_fd = -1;
         other.m_dev = nullptr;
         other.m_is_grabbed = false;
@@ -154,6 +156,8 @@ bool EvdevHandler::open_device(const std::string& device_path) {
         return false;
     }
 
+    m_path = device_path;
+
     std::cout << "[evdev] Opened: " << device_path
               << " (" << libevdev_get_name(m_dev) << ")" << std::endl;
     return true;
@@ -244,8 +248,8 @@ void EvdevHandler::close_device() {
 // Event Reading
 // ============================================================
 
-bool EvdevHandler::read_event(KeyEvent& out_event) {
-    if (!m_dev || m_fd < 0) return false;
+ReadStatus EvdevHandler::read_event(KeyEvent& out_event) {
+    if (!m_dev || m_fd < 0) return ReadStatus::ERROR;
 
     struct input_event ev;
     int rc;
@@ -264,21 +268,26 @@ bool EvdevHandler::read_event(KeyEvent& out_event) {
         }
 
         if (rc == -EAGAIN) {
-            // Không có event (NONBLOCK mode) - caller nên poll/select/epoll
-            return false;
+            // Không có event (NONBLOCK mode)
+            return ReadStatus::NO_EVENT;
+        }
+
+        if (rc == -ENODEV) {
+            std::cerr << "[evdev] Device disconnected: " << get_device_name() << std::endl;
+            return ReadStatus::DISCONNECTED;
         }
 
         if (rc < 0) {
-            // Lỗi thực sự (device disconnected, v.v.)
+            // Lỗi thực sự
             std::cerr << "[evdev] ERROR reading event: " << strerror(-rc) << std::endl;
-            return false;
+            return ReadStatus::ERROR;
         }
 
         // Chỉ xử lý EV_KEY events (bỏ qua EV_SYN, EV_MSC, etc.)
         if (ev.type == EV_KEY) {
             out_event.keycode = ev.code;
             out_event.value   = ev.value; // 0=release, 1=press, 2=repeat
-            return true;
+            return ReadStatus::HAS_EVENT;
         }
     }
 }

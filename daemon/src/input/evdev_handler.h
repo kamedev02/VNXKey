@@ -38,6 +38,16 @@ struct KeyEvent {
 };
 
 /**
+ * @brief Trạng thái đọc event
+ */
+enum class ReadStatus {
+    NO_EVENT,
+    HAS_EVENT,
+    DISCONNECTED,
+    ERROR
+};
+
+/**
  * @brief Callback type: nhận KeyEvent, trả về bool (true = consumed, false = passthrough)
  */
 using KeyEventCallback = std::function<bool(const KeyEvent&)>;
@@ -132,21 +142,26 @@ public:
     void close_device();
 
     /**
-     * @brief Đọc 1 key event (blocking)
+     * @brief Đọc 1 key event (non-blocking)
      *
-     * Block cho đến khi có event, hoặc bị interrupt bởi signal.
      * @param[out] event  Event đọc được
-     * @return true nếu đọc thành công, false nếu error/signal
+     * @return ReadStatus: HAS_EVENT, NO_EVENT, DISCONNECTED
      */
-    bool read_event(KeyEvent& event);
+    ReadStatus read_event(KeyEvent& event);
 
     /**
      * @brief Lấy tên thiết bị (debug info)
      */
     std::string get_device_name() const;
 
+    /**
+     * @brief Lấy đường dẫn thiết bị (vd: /dev/input/event3)
+     */
+    const std::string& get_device_path() const { return m_path; }
+
 private:
     int m_fd = -1;                  ///< File descriptor tới /dev/input/eventX
     struct libevdev* m_dev = nullptr; ///< libevdev device handle
     bool m_is_grabbed = false;      ///< Trạng thái grab hiện tại
+    std::string m_path;             ///< Đường dẫn thiết bị
 };
