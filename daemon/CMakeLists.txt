@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(vnxkey_daemon VERSION 26.06.016 LANGUAGES CXX)
+project(vnxkey_daemon VERSION 26.06.017 LANGUAGES CXX)
 
 # Yêu cầu C++17
 set(CMAKE_CXX_STANDARD 17)
