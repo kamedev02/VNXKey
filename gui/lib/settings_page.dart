@@ -89,7 +89,8 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.pop(context);
               // Lệnh dừng service (yêu cầu polkit để hỏi pass)
               try {
-                Process.run('pkexec', ['systemctl', 'stop', 'vnxkey']);
+                // Hiển thị loading overlay nếu cần thiết
+                await Process.run('pkexec', ['systemctl', 'stop', 'vnxkey']);
                 Future.delayed(const Duration(milliseconds: 500), () {
                   exit(0);
                 });
@@ -99,6 +100,44 @@ class _SettingsPageState extends State<SettingsPage> {
               }
             },
             child: const Text('Thoát', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restartService() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Khởi động lại dịch vụ',
+          style: TextStyle(color: Colors.black),
+        ),
+        content: const Text(
+          'Hành động này sẽ khởi động lại tiến trình VNXKey đang chạy ngầm. Bạn có thể cần nhập mật khẩu sudo.\n\nTiếp tục?',
+          style: TextStyle(color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Huỷ', style: TextStyle(color: Colors.black54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await Process.run('pkexec', ['systemctl', 'restart', 'vnxkey']);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã khởi động lại dịch vụ!')),
+                  );
+                }
+              } catch (e) {
+                // Ignore
+              }
+            },
+            child: const Text('Khởi động lại', style: TextStyle(color: Colors.blue)),
           ),
         ],
       ),
@@ -332,7 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSwitchRow(
                 label: 'DỪNG KHẨN CẤP (Kill Switch)',
                 subtitle:
-                    'Tạm thời nhả toàn bộ bàn phím để khắc phục lỗi kẹt phím hoặc lặp phím',
+                    'Nhả toàn bộ quyền điều khiển bàn phím. Sử dụng khi gõ bị kẹt hoặc lỗi phím.',
                 value: _config.emergencyStop,
                 onChanged: (val) =>
                     _updateConfig(_config.copyWith(emergencyStop: val)),
@@ -342,6 +381,25 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         const SizedBox(height: 40),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.blue,
+              side: const BorderSide(color: Colors.blue, width: 1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: _restartService,
+            child: const Text(
+              'Khởi động lại Service',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           height: 50,

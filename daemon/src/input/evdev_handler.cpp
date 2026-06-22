@@ -112,8 +112,7 @@ std::vector<std::string> EvdevHandler::find_keyboards() {
                 if (name.find("VNXKey") != std::string::npos) {
                     continue; // Tránh tự grab virtual keyboard của chính mình!
                 }
-                std::cout << "[evdev] Found keyboard: " << path
-                          << " (" << name << ")" << std::endl;
+                // (Bỏ in log "Found keyboard" ở đây để tránh spam file log mỗi 2 giây)
                 keyboards.push_back(path);
             }
         }
