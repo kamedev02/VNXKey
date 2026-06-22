@@ -111,6 +111,7 @@ static void my_application_startup(GApplication* application) {
   // Perform any actions required at application startup.
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
 
+  // [WORKING][CRITICAL] Rounded bottom corners CSS via GTK Provider - DO NOT MODIFY UNLESS NECESSARY
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(provider, "window { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }", -1, NULL);
   gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);

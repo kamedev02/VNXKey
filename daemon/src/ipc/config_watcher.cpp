@@ -179,6 +179,7 @@ void ConfigWatcher::write_config(const VnxConfig& cfg) const {
     }
 
     if (!content.empty() && content.find("\"enabled\"") != std::string::npos) {
+        // [WORKING][CRITICAL] Regex replacement to preserve excludedApps and other new fields - DO NOT MODIFY UNLESS NECESSARY
         std::regex e_regex("\"enabled\"\\s*:\\s*(true|false)");
         content = std::regex_replace(content, e_regex, "\"enabled\": " + std::string(cfg.enabled ? "true" : "false"));
         file << content;
