@@ -444,148 +444,151 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildAboutTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset('assets/logo/128x128.png', fit: BoxFit.cover),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'VNXKey',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset('assets/logo/128x128.png', fit: BoxFit.cover),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Phiên bản hiện tại: v$_version',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 24),
+            const Text(
+              'VNXKey',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            Text(
+              'Phiên bản hiện tại: v$_version',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
 
-          ValueListenableBuilder<UpdateInfo?>(
-            valueListenable: globalUpdateNotifier,
-            builder: (context, updateInfo, child) {
-              if (updateInfo != null) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Có phiên bản mới: v${updateInfo.version}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF166534),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        updateInfo.releaseNotes,
-                        style: const TextStyle(
-                          color: Color(0xFF15803D),
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 16),
-                      if (_isDownloading)
-                        Column(
-                          children: [
-                            LinearProgressIndicator(
-                              value: _downloadProgress,
-                              backgroundColor: Colors.white,
-                              color: const Color(0xFF22C55E),
-                              minHeight: 8,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Đang tải... ${(_downloadProgress * 100).toStringAsFixed(1)}%',
-                              style: const TextStyle(color: Color(0xFF166534)),
-                            ),
-                          ],
-                        )
-                      else
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            setState(() {
-                              _isDownloading = true;
-                              _downloadProgress = 0;
-                            });
-
-                            bool success = await UpdateService.instance
-                                .downloadAndInstallUpdate(
-                                  updateInfo.downloadUrl,
-                                  (received, total) {
-                                    setState(() {
-                                      _downloadProgress = received / total;
-                                    });
-                                  },
-                                );
-
-                            setState(() {
-                              _isDownloading = false;
-                            });
-
-                            if (success) {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Cập nhật thành công'),
-                                  content: const Text(
-                                    'VNXKey đã được cài đặt phiên bản mới. Ứng dụng sẽ thoát để bạn có thể khởi động lại.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => exit(0),
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Cập nhật thất bại. Vui lòng thử lại.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.cloud_download),
-                          label: const Text('Cập nhật ngay'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF22C55E),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
+            ValueListenableBuilder<UpdateInfo?>(
+              valueListenable: globalUpdateNotifier,
+              builder: (context, updateInfo, child) {
+                if (updateInfo != null) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Có phiên bản mới: v${updateInfo.version}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF166534),
+                            fontSize: 15,
                           ),
                         ),
-                    ],
-                  ),
-                );
-              }
+                        const SizedBox(height: 4),
+                        Text(
+                          updateInfo.releaseNotes,
+                          style: const TextStyle(
+                            color: Color(0xFF15803D),
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        if (_isDownloading)
+                          Column(
+                            children: [
+                              LinearProgressIndicator(
+                                value: _downloadProgress,
+                                backgroundColor: Colors.white,
+                                color: const Color(0xFF22C55E),
+                                minHeight: 6,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Đang tải... ${(_downloadProgress * 100).toStringAsFixed(1)}%',
+                                style: const TextStyle(color: Color(0xFF166534), fontSize: 13),
+                              ),
+                            ],
+                          )
+                        else
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              setState(() {
+                                _isDownloading = true;
+                                _downloadProgress = 0;
+                              });
+
+                              bool success = await UpdateService.instance
+                                  .downloadAndInstallUpdate(
+                                    updateInfo.downloadUrl,
+                                    (received, total) {
+                                      setState(() {
+                                        _downloadProgress = received / total;
+                                      });
+                                    },
+                                  );
+
+                              setState(() {
+                                _isDownloading = false;
+                              });
+
+                              if (success) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Cập nhật thành công'),
+                                    content: const Text(
+                                      'VNXKey đã được cài đặt phiên bản mới. Ứng dụng sẽ thoát để bạn có thể khởi động lại.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => exit(0),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Cập nhật thất bại. Vui lòng thử lại.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.cloud_download, size: 16),
+                            label: const Text('Cập nhật ngay', style: TextStyle(fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF22C55E),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              minimumSize: const Size(150, 32),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }
 
               return OutlinedButton.icon(
                 onPressed: _isCheckingUpdate
@@ -599,29 +602,28 @@ class _SettingsPageState extends State<SettingsPage> {
                         if (update != null) {
                           globalUpdateNotifier.value = update;
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Bạn đang sử dụng phiên bản mới nhất!',
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bạn đang dùng phiên bản mới nhất!'),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         }
                       },
                 icon: _isCheckingUpdate
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.update, color: Colors.black),
+                    : const Icon(Icons.refresh),
                 label: Text(
                   _isCheckingUpdate ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật',
                 ),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(200, 45),
+                ),
               );
             },
           ),
