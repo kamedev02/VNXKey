@@ -13,6 +13,7 @@ import 'config_service.dart';
 import 'update_service.dart';
 import 'window_poller.dart';
 import 'dart:async';
+import 'dart:isolate';
 
 final ValueNotifier<UpdateInfo?> globalUpdateNotifier = ValueNotifier(null);
 
@@ -88,7 +89,7 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
       bool isExcluded = false;
       
       if (_currentConfig.excludedApps.isNotEmpty) {
-        final activeClass = await WindowPoller.getActiveWindowClass();
+        final activeClass = await Isolate.run(() => WindowPoller.getActiveWindowClass());
         if (activeClass.isNotEmpty) {
           isExcluded = _currentConfig.excludedApps.any((app) => 
             app.toLowerCase() == activeClass.toLowerCase());

@@ -217,25 +217,94 @@ static int hex_char_to_keycode(char c) {
 
 static int basic_ascii_to_keycode(char c, bool& shift) {
     shift = false;
-    if (c >= 'A' && c <= 'Z') { shift = true; c += 32; }
     
-    switch (c) {
-        case 'a': return KEY_A; case 'b': return KEY_B; case 'c': return KEY_C;
-        case 'd': return KEY_D; case 'e': return KEY_E; case 'f': return KEY_F;
-        case 'g': return KEY_G; case 'h': return KEY_H; case 'i': return KEY_I;
-        case 'j': return KEY_J; case 'k': return KEY_K; case 'l': return KEY_L;
-        case 'm': return KEY_M; case 'n': return KEY_N; case 'o': return KEY_O;
-        case 'p': return KEY_P; case 'q': return KEY_Q; case 'r': return KEY_R;
-        case 's': return KEY_S; case 't': return KEY_T; case 'u': return KEY_U;
-        case 'v': return KEY_V; case 'w': return KEY_W; case 'x': return KEY_X;
-        case 'y': return KEY_Y; case 'z': return KEY_Z;
-        case '0': return KEY_0; case '1': return KEY_1; case '2': return KEY_2;
-        case '3': return KEY_3; case '4': return KEY_4; case '5': return KEY_5;
-        case '6': return KEY_6; case '7': return KEY_7; case '8': return KEY_8;
-        case '9': return KEY_9;
-        case ' ': return KEY_SPACE;
-        default: return -1;
+    // Control characters
+    if (c == '\n') return KEY_ENTER;
+    if (c == '\t') return KEY_TAB;
+    if (c == '\b') return KEY_BACKSPACE;
+    if (c == '\x1b') return KEY_ESC;
+    
+    // Space and digits
+    if (c == ' ') return KEY_SPACE;
+    if (c >= '0' && c <= '9') {
+        if (c == '0') return KEY_0;
+        return KEY_1 + (c - '1');
     }
+    
+    // Lowercase letters
+    if (c >= 'a' && c <= 'z') {
+        switch (c) {
+            case 'a': return KEY_A; case 'b': return KEY_B; case 'c': return KEY_C;
+            case 'd': return KEY_D; case 'e': return KEY_E; case 'f': return KEY_F;
+            case 'g': return KEY_G; case 'h': return KEY_H; case 'i': return KEY_I;
+            case 'j': return KEY_J; case 'k': return KEY_K; case 'l': return KEY_L;
+            case 'm': return KEY_M; case 'n': return KEY_N; case 'o': return KEY_O;
+            case 'p': return KEY_P; case 'q': return KEY_Q; case 'r': return KEY_R;
+            case 's': return KEY_S; case 't': return KEY_T; case 'u': return KEY_U;
+            case 'v': return KEY_V; case 'w': return KEY_W; case 'x': return KEY_X;
+            case 'y': return KEY_Y; case 'z': return KEY_Z;
+        }
+    }
+    
+    // Uppercase letters
+    if (c >= 'A' && c <= 'Z') {
+        shift = true;
+        switch (c) {
+            case 'A': return KEY_A; case 'B': return KEY_B; case 'C': return KEY_C;
+            case 'D': return KEY_D; case 'E': return KEY_E; case 'F': return KEY_F;
+            case 'G': return KEY_G; case 'H': return KEY_H; case 'I': return KEY_I;
+            case 'J': return KEY_J; case 'K': return KEY_K; case 'L': return KEY_L;
+            case 'M': return KEY_M; case 'N': return KEY_N; case 'O': return KEY_O;
+            case 'P': return KEY_P; case 'Q': return KEY_Q; case 'R': return KEY_R;
+            case 'S': return KEY_S; case 'T': return KEY_T; case 'U': return KEY_U;
+            case 'V': return KEY_V; case 'W': return KEY_W; case 'X': return KEY_X;
+            case 'Y': return KEY_Y; case 'Z': return KEY_Z;
+        }
+    }
+    
+    // Punctuation (unshifted)
+    switch (c) {
+        case '`': return KEY_GRAVE;
+        case '-': return KEY_MINUS;
+        case '=': return KEY_EQUAL;
+        case '[': return KEY_LEFTBRACE;
+        case ']': return KEY_RIGHTBRACE;
+        case '\\': return KEY_BACKSLASH;
+        case ';': return KEY_SEMICOLON;
+        case '\'': return KEY_APOSTROPHE;
+        case ',': return KEY_COMMA;
+        case '.': return KEY_DOT;
+        case '/': return KEY_SLASH;
+    }
+    
+    // Punctuation (shifted)
+    shift = true;
+    switch (c) {
+        case '~': return KEY_GRAVE;
+        case '!': return KEY_1;
+        case '@': return KEY_2;
+        case '#': return KEY_3;
+        case '$': return KEY_4;
+        case '%': return KEY_5;
+        case '^': return KEY_6;
+        case '&': return KEY_7;
+        case '*': return KEY_8;
+        case '(': return KEY_9;
+        case ')': return KEY_0;
+        case '_': return KEY_MINUS;
+        case '+': return KEY_EQUAL;
+        case '{': return KEY_LEFTBRACE;
+        case '}': return KEY_RIGHTBRACE;
+        case '|': return KEY_BACKSLASH;
+        case ':': return KEY_SEMICOLON;
+        case '"': return KEY_APOSTROPHE;
+        case '<': return KEY_COMMA;
+        case '>': return KEY_DOT;
+        case '?': return KEY_SLASH;
+    }
+    
+    shift = false;
+    return -1;
 }
 
 std::vector<uint32_t> UinputHandler::utf8_to_codepoints(const std::string& utf8) {
@@ -297,7 +366,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
                 if (shift) send_event(EV_KEY, KEY_LEFTSHIFT, 0);
                 sync();
                 
-                usleep(10000); // 10ms delay (tăng từ 5ms để an toàn hơn cho terminal)
+                usleep(2000); // 2ms delay (optimized from 10ms for much faster ASCII typing)
                 continue;
             }
         }
