@@ -73,7 +73,7 @@ public:
      *
      * @param utf8_char  Ký tự UTF-8 cần phát
      */
-    void emit_unicode(const std::string& utf8_char);
+    void emit_unicode(const std::string& utf8_char, bool is_capslock_on = false);
 
     /**
      * @brief Phát nhiều Backspace

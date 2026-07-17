@@ -537,7 +537,7 @@ int main(int argc, char* argv[]) {
                             uinput.emit_key(kev.keycode, kev.value);
                             break;
                         case ActionType::EMIT_CHAR:
-                            uinput.emit_unicode(action.data);
+                            uinput.emit_unicode(action.data, is_capslock);
                             break;
                         case ActionType::EMIT_BACKSPACE:
                             uinput.emit_backspace(action.count);

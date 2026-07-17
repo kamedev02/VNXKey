@@ -344,7 +344,7 @@ std::vector<uint32_t> UinputHandler::utf8_to_codepoints(const std::string& utf8)
     return codepoints;
 }
 
-void UinputHandler::emit_unicode(const std::string& utf8_char) {
+void UinputHandler::emit_unicode(const std::string& utf8_char, bool is_capslock_on) {
     if (m_fd < 0 || utf8_char.empty()) return;
 
     auto codepoints = utf8_to_codepoints(utf8_char);
@@ -356,6 +356,13 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
             bool shift = false;
             int kc = basic_ascii_to_keycode(static_cast<char>(cp), shift);
             if (kc >= 0) {
+                // Sửa lỗi: Nếu CapsLock đang BẬT, trạng thái shift cho các phím chữ cái (A-Z) sẽ bị ĐẢO NGƯỢC
+                // Ví dụ: Muốn in 'A' (shift=true), nhưng CapsLock ON -> gửi 'A' KHÔNG shift để hệ điều hành in hoa.
+                // Muốn in 'a' (shift=false), nhưng CapsLock ON -> gửi 'A' CÓ shift để hệ điều hành in thường.
+                if (is_capslock_on && kc >= KEY_A && kc <= KEY_Z) {
+                    shift = !shift;
+                }
+
                 if (shift) send_event(EV_KEY, KEY_LEFTSHIFT, 1);
                 sync();
                 
@@ -416,6 +423,8 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         usleep(1000); // 1ms delay between press and release
         send_event(EV_KEY, KEY_SPACE, 0);
         sync();
-        usleep(30000); // 30ms để Terminal/GTK có đủ thời gian reset IM context trước khi nhận ký tự tiếp theo
+        // Tăng lên 50ms để Terminal/GTK chắc chắn có đủ thời gian reset IM context
+        // Đặc biệt khi in nhiều ký tự liên tiếp như "ươ" (uow) để không bị văng code hex
+        usleep(50000); 
     }
 }

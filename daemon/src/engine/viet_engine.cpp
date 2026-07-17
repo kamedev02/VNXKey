@@ -75,9 +75,9 @@ std::vector<EngineAction> VietEngine::process_key(char ch, bool is_capslock_on) 
         UnikeyBackspacePress();
     } else {
         // Cập nhật trạng thái CapsLock/Shift
-        // Tham số 1: Capslock (1=on, 0=off)
-        // Tham số 2: Shift_only (0 cho default)
-        UnikeySetCapsState(is_capslock_on ? 1 : 0, 0); 
+        // Tham số 1: ShiftPressed (0 vì đã xử lý ở mức OS/ch)
+        // Tham số 2: CapsLockOn
+        UnikeySetCapsState(0, is_capslock_on ? 1 : 0); 
         UnikeyFilter((unsigned char)ch);
     }
 
