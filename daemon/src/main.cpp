@@ -515,10 +515,19 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
+                auto is_modifier_key = [](int k) {
+                    return k == KEY_LEFTSHIFT || k == KEY_RIGHTSHIFT ||
+                           k == KEY_LEFTCTRL || k == KEY_RIGHTCTRL ||
+                           k == KEY_LEFTALT || k == KEY_RIGHTALT ||
+                           k == KEY_LEFTMETA || k == KEY_RIGHTMETA;
+                };
+
                 if (needs_release) {
-                    // Tạm thời nhả tất cả các phím vật lý đang giữ để OS không bị kẹt khi gõ GTK sequence
+                    // Tạm thời nhả các phím MODIFIER đang giữ để OS không bị kẹt khi gõ GTK sequence
                     for (int k : physical_pressed_keys) {
-                        uinput.emit_key(k, 0);
+                        if (is_modifier_key(k)) {
+                            uinput.emit_key(k, 0);
+                        }
                     }
                 }
 
@@ -540,9 +549,11 @@ int main(int argc, char* argv[]) {
                 }
 
                 if (needs_release) {
-                    // Phục hồi lại trạng thái các phím vật lý đang giữ để không làm kẹt phím Shift/Ctrl
+                    // Phục hồi lại trạng thái các phím MODIFIER đang giữ
                     for (int k : physical_pressed_keys) {
-                        uinput.emit_key(k, 1);
+                        if (is_modifier_key(k)) {
+                            uinput.emit_key(k, 1);
+                        }
                     }
                 }
             } // end while read_event
