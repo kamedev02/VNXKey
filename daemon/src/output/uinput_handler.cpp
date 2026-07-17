@@ -155,9 +155,10 @@ void UinputHandler::emit_key(int keycode, int value) {
         // Hành vi cũ: Nhấn rồi thả ngay
         send_event(EV_KEY, static_cast<uint16_t>(keycode), 1);
         sync();
+        usleep(1000); // 1ms delay between press and release to prevent dropped keys
         send_event(EV_KEY, static_cast<uint16_t>(keycode), 0);
         sync();
-        usleep(5000); // 5ms
+        usleep(5000); // 5ms delay after release
     }
 }
 
@@ -360,6 +361,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
                 
                 send_event(EV_KEY, static_cast<uint16_t>(kc), 1);
                 sync();
+                usleep(1000); // 1ms delay between press and release
                 send_event(EV_KEY, static_cast<uint16_t>(kc), 0);
                 sync();
                 
@@ -383,6 +385,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         usleep(1000); // Ensure modifier state is processed by the OS
         send_event(EV_KEY, KEY_U, 1);
         sync();
+        usleep(1000); // 1ms delay between press and release
         send_event(EV_KEY, KEY_U, 0);
         sync();
         send_event(EV_KEY, KEY_LEFTSHIFT, 0);
@@ -399,6 +402,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
             if (kc >= 0) {
                 send_event(EV_KEY, static_cast<uint16_t>(kc), 1);
                 sync();
+                usleep(1000); // 1ms delay between press and release
                 send_event(EV_KEY, static_cast<uint16_t>(kc), 0);
                 sync();
                 usleep(2000); // Tăng lên 2ms để tránh Wayland drop phím khi gõ hex dài (như 1b0)
@@ -409,6 +413,7 @@ void UinputHandler::emit_unicode(const std::string& utf8_char) {
         // nếu ứng dụng (như Terminal) không hỗ trợ tính năng Ctrl+Shift+U của GTK.
         send_event(EV_KEY, KEY_SPACE, 1);
         sync();
+        usleep(1000); // 1ms delay between press and release
         send_event(EV_KEY, KEY_SPACE, 0);
         sync();
         usleep(30000); // 30ms để Terminal/GTK có đủ thời gian reset IM context trước khi nhận ký tự tiếp theo

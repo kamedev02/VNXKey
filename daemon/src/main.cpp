@@ -502,8 +502,9 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
 
-                // Giao cho VietEngine xử lý
-                auto actions = engine.process_key(ch);
+                // Giao cho VietEngine xử lý. Truyền thêm trạng thái Capslock để engine viết hoa đúng.
+                bool is_capslock = evdev->is_capslock_on();
+                auto actions = engine.process_key(ch, is_capslock);
 
                 // Thực thi actions
                 bool needs_release = false;
@@ -535,6 +536,13 @@ int main(int argc, char* argv[]) {
                         case ActionType::NONE:
                         case ActionType::COMMIT:
                             break;
+                    }
+                }
+
+                if (needs_release) {
+                    // Phục hồi lại trạng thái các phím vật lý đang giữ để không làm kẹt phím Shift/Ctrl
+                    for (int k : physical_pressed_keys) {
+                        uinput.emit_key(k, 1);
                     }
                 }
             } // end while read_event

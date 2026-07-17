@@ -119,6 +119,14 @@ target_link_libraries(vnxkey-engine-test PRIVATE unikey_core)
 target_compile_options(vnxkey-engine-test PRIVATE -Wall -Wextra)
 
 # ============================================================
+# Target phụ: vnxkey-ascii-test
+# ============================================================
+
+add_executable(vnxkey-ascii-test tests/ascii_map_test.cpp)
+target_include_directories(vnxkey-ascii-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_options(vnxkey-ascii-test PRIVATE -Wall -Wextra)
+
+# ============================================================
 # Install rules (FHS-compliant cho .deb packaging)
 #
 # Khi đóng gói: cmake -DCMAKE_INSTALL_PREFIX=/usr ..

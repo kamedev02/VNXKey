@@ -84,27 +84,34 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
     _checkForUpdates();
   }
 
+  bool _isPolling = false;
+
   void _startActiveWindowPoller() {
     _pollerTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
-      bool isExcluded = false;
-      
-      if (_currentConfig.excludedApps.isNotEmpty) {
-        final activeClass = await Isolate.run(() => WindowPoller.getActiveWindowClass());
-        if (activeClass.isNotEmpty) {
-          isExcluded = _currentConfig.excludedApps.any((app) => 
-            app.toLowerCase() == activeClass.toLowerCase());
-        }
-      }
-
-      final file = File('/dev/shm/vnxkey_excluded');
+      if (_isPolling) return;
+      _isPolling = true;
       try {
+        bool isExcluded = false;
+        
+        if (_currentConfig.excludedApps.isNotEmpty) {
+          final activeClass = await Isolate.run(() => WindowPoller.getActiveWindowClass());
+          if (activeClass.isNotEmpty) {
+            isExcluded = _currentConfig.excludedApps.any((app) => 
+              app.toLowerCase() == activeClass.toLowerCase());
+          }
+        }
+
+        final file = File('/dev/shm/vnxkey_excluded');
         final currentContent = await file.exists() ? await file.readAsString() : '';
+
         final newContent = isExcluded ? '1' : '0';
         if (currentContent != newContent) {
           await file.writeAsString(newContent);
         }
       } catch (e) {
         // ignore
+      } finally {
+        _isPolling = false;
       }
     });
   }

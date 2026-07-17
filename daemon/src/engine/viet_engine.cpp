@@ -63,7 +63,7 @@ std::vector<EngineAction> VietEngine::flush(int /*chars_committed*/) {
     return {};
 }
 
-std::vector<EngineAction> VietEngine::process_key(char ch) {
+std::vector<EngineAction> VietEngine::process_key(char ch, bool is_capslock_on) {
     std::vector<EngineAction> actions;
 
     if (m_method == InputMethod::OFF) {
@@ -74,8 +74,10 @@ std::vector<EngineAction> VietEngine::process_key(char ch) {
     if (ch == '\b') {
         UnikeyBackspacePress();
     } else {
-        // Cập nhật trạng thái CapsLock/Shift (TODO: lấy từ evdev nếu cần)
-        UnikeySetCapsState(0, 0); 
+        // Cập nhật trạng thái CapsLock/Shift
+        // Tham số 1: Capslock (1=on, 0=off)
+        // Tham số 2: Shift_only (0 cho default)
+        UnikeySetCapsState(is_capslock_on ? 1 : 0, 0); 
         UnikeyFilter((unsigned char)ch);
     }
 
