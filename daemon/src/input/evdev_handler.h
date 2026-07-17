@@ -159,6 +159,11 @@ public:
      */
     const std::string& get_device_path() const { return m_path; }
 
+    /**
+     * @brief Kiểm tra xem đèn Capslock có đang bật không
+     */
+    bool is_capslock_on() const;
+
 private:
     int m_fd = -1;                  ///< File descriptor tới /dev/input/eventX
     struct libevdev* m_dev = nullptr; ///< libevdev device handle

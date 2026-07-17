@@ -170,6 +170,13 @@ std::string EvdevHandler::get_device_name() const {
     return "(no device)";
 }
 
+bool EvdevHandler::is_capslock_on() const {
+    if (m_dev) {
+        return libevdev_get_event_value(m_dev, EV_LED, LED_CAPSL) != 0;
+    }
+    return false;
+}
+
 // ============================================================
 // GRAB / UNGRAB - Phần quan trọng nhất
 // ============================================================

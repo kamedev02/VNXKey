@@ -46,7 +46,7 @@ public:
     VietEngine(const VietEngine&) = delete;
     VietEngine& operator=(const VietEngine&) = delete;
 
-    std::vector<EngineAction> process_key(char ch);
+    std::vector<EngineAction> process_key(char ch, bool is_capslock_on = false);
     void reset();
     std::vector<EngineAction> flush(int chars_committed = -1);
 
