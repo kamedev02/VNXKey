@@ -523,11 +523,10 @@ int main(int argc, char* argv[]) {
                 };
 
                 if (needs_release) {
-                    // Tạm thời nhả các phím MODIFIER đang giữ để OS không bị kẹt khi gõ GTK sequence
+                    // Tạm thời nhả TẤT CẢ các phím đang giữ để không kẹt GTK sequence (Ctrl+Shift+U)
+                    // và để các phím chữ cái (như 'a', 'u') không bị kẹt khi hệ thống gõ mã hex.
                     for (int k : physical_pressed_keys) {
-                        if (is_modifier_key(k)) {
-                            uinput.emit_key(k, 0);
-                        }
+                        uinput.emit_key(k, 0);
                     }
                 }
 
