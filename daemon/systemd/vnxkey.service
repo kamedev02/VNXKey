@@ -42,7 +42,7 @@ SyslogIdentifier=vnxkey
 
 # ── Environment ──
 # Config file path
-Environment=VNXKEY_CONFIG=/home/%u/.config/vnxkey/config.json
+Environment=VNXKEY_CONFIG=/var/tmp/vnxkey/config.json
 
 [Install]
 WantedBy=multi-user.target
