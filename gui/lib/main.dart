@@ -94,7 +94,7 @@ class _VnxKeyAppState extends State<VnxKeyApp> with WindowListener {
         bool isExcluded = false;
         
         if (_currentConfig.excludedApps.isNotEmpty) {
-          final activeClass = await Isolate.run(() => WindowPoller.getActiveWindowClass());
+          final activeClass = await WindowPoller.getActiveWindowClass();
           if (activeClass.isNotEmpty) {
             isExcluded = _currentConfig.excludedApps.any((app) => 
               app.toLowerCase() == activeClass.toLowerCase());

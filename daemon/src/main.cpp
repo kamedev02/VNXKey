@@ -174,12 +174,24 @@ static char keycode_to_char(int keycode, bool shift, bool capslock) {
         case KEY_8: return shift ? '*' : '8';
         case KEY_9: return shift ? '(' : '9';
         case KEY_0: return shift ? ')' : '0';
-        // Dấu câu
+        
+        // Ký tự đặc biệt (Punctuation)
+        case KEY_MINUS:      return shift ? '_' : '-';
+        case KEY_EQUAL:      return shift ? '+' : '=';
+        case KEY_LEFTBRACE:  return shift ? '{' : '[';
+        case KEY_RIGHTBRACE: return shift ? '}' : ']';
+        case KEY_BACKSLASH:  return shift ? '|' : '\\';
+        case KEY_SEMICOLON:  return shift ? ':' : ';';
+        case KEY_APOSTROPHE: return shift ? '"' : '\'';
+        case KEY_GRAVE:      return shift ? '~' : '`';
+        case KEY_COMMA:      return shift ? '<' : ',';
+        case KEY_DOT:        return shift ? '>' : '.';
+        case KEY_SLASH:      return shift ? '?' : '/';
+        
+        // Điều khiển cơ bản
         case KEY_SPACE: return ' ';
         case KEY_ENTER: return '\n';
         case KEY_TAB:   return '\t';
-        case KEY_COMMA: return shift ? '<' : ',';
-        case KEY_DOT:   return shift ? '>' : '.';
         default: return 0; // Không phải ASCII
     }
 }
@@ -501,7 +513,8 @@ int main(int argc, char* argv[]) {
                 char ch = keycode_to_char(kev.keycode, shift_pressed, is_capslock);
 
                 if (ch == 0) {
-                    // Không phải ASCII (F1, Home, mũi tên...) → passthrough
+                    // Không phải ASCII (F1, Home, mũi tên...) → reset buffer và passthrough
+                    engine.reset();
                     uinput.emit_key(kev.keycode, kev.value);
                     continue;
                 }

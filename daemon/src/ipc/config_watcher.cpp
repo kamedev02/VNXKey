@@ -178,10 +178,22 @@ void ConfigWatcher::write_config(const VnxConfig& cfg) const {
         return;
     }
 
-    if (!content.empty() && content.find("\"enabled\"") != std::string::npos) {
-        // [WORKING][CRITICAL] Regex replacement to preserve excludedApps and other new fields - DO NOT MODIFY UNLESS NECESSARY
-        std::regex e_regex("\"enabled\"\\s*:\\s*(true|false)");
-        content = std::regex_replace(content, e_regex, "\"enabled\": " + std::string(cfg.enabled ? "true" : "false"));
+    if (!content.empty()) {
+        if (content.find("\"enabled\"") != std::string::npos) {
+            std::regex e_regex("\"enabled\"\\s*:\\s*(true|false)");
+            content = std::regex_replace(content, e_regex, "\"enabled\": " + std::string(cfg.enabled ? "true" : "false"));
+        } else {
+            size_t pos = content.find_last_of('}');
+            if (pos != std::string::npos) {
+                // Find if we need a comma
+                size_t prev_pos = content.find_last_not_of(" \t\n\r", pos - 1);
+                if (prev_pos != std::string::npos && content[prev_pos] != '{' && content[prev_pos] != ',') {
+                    content.insert(pos, ",\n  \"enabled\": " + std::string(cfg.enabled ? "true" : "false") + "\n");
+                } else {
+                    content.insert(pos, "\n  \"enabled\": " + std::string(cfg.enabled ? "true" : "false") + "\n");
+                }
+            }
+        }
         file << content;
     } else {
         file << "{\n"
@@ -195,7 +207,8 @@ void ConfigWatcher::write_config(const VnxConfig& cfg) const {
              << "  \"standard_send_key\": " << (cfg.standard_send_key ? "true" : "false") << ",\n"
              << "  \"spellcheck\": " << (cfg.spellcheck ? "true" : "false") << ",\n"
              << "  \"disable_non_us\": " << (cfg.disable_non_us ? "true" : "false") << ",\n"
-             << "  \"startup\": " << (cfg.startup ? "true" : "false") << "\n"
+             << "  \"startup\": " << (cfg.startup ? "true" : "false") << ",\n"
+             << "  \"excluded_apps\": []\n"
              << "}\n";
     }
 }
