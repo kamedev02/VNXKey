@@ -4,18 +4,34 @@
 #include <iostream>
 #include <cstdint>
 
-// Hàm tiện ích: Chuyển UTF-16 (không có surrogate pairs) sang UTF-8
+// Hàm tiện ích: Chuyển UTF-16 sang UTF-8 (có hỗ trợ surrogate pairs)
 static std::string utf16_to_utf8(const uint16_t* utf16_str, int len) {
     std::string utf8_str;
     for (int i = 0; i < len; ++i) {
-        uint16_t cp = utf16_str[i];
+        uint32_t cp = utf16_str[i];
+        
+        // Kiểm tra High Surrogate
+        if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < len) {
+            uint16_t low = utf16_str[i + 1];
+            if (low >= 0xDC00 && low <= 0xDFFF) {
+                // Hợp lệ, tính codepoint thực
+                cp = ((cp - 0xD800) << 10) + (low - 0xDC00) + 0x10000;
+                i++; // Skip low surrogate
+            }
+        }
+
         if (cp < 0x80) {
             utf8_str += static_cast<char>(cp);
         } else if (cp < 0x800) {
             utf8_str += static_cast<char>(0xC0 | (cp >> 6));
             utf8_str += static_cast<char>(0x80 | (cp & 0x3F));
-        } else {
+        } else if (cp < 0x10000) {
             utf8_str += static_cast<char>(0xE0 | (cp >> 12));
+            utf8_str += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+            utf8_str += static_cast<char>(0x80 | (cp & 0x3F));
+        } else {
+            utf8_str += static_cast<char>(0xF0 | (cp >> 18));
+            utf8_str += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
             utf8_str += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
             utf8_str += static_cast<char>(0x80 | (cp & 0x3F));
         }
@@ -63,8 +79,11 @@ std::vector<EngineAction> VietEngine::flush(int /*chars_committed*/) {
     return {};
 }
 
-std::vector<EngineAction> VietEngine::process_key(char ch, bool is_capslock_on) {
+std::vector<EngineAction> VietEngine::process_key(char ch) {
     std::vector<EngineAction> actions;
+
+    // Thiết lập trạng thái capslock (luôn bằng 0 vì ta đã tính toán HOA/thường xong trước khi gọi)
+    UnikeySetCapsState(0, 0);
 
     if (m_method == InputMethod::OFF) {
         actions.push_back({ActionType::PASSTHROUGH, std::string(1, ch), 1});
@@ -74,10 +93,7 @@ std::vector<EngineAction> VietEngine::process_key(char ch, bool is_capslock_on) 
     if (ch == '\b') {
         UnikeyBackspacePress();
     } else {
-        // Cập nhật trạng thái CapsLock/Shift
-        // Tham số 1: ShiftPressed (0 vì đã xử lý ở mức OS/ch)
-        // Tham số 2: CapsLockOn
-        UnikeySetCapsState(0, is_capslock_on ? 1 : 0); 
+        UnikeySetCapsState(0, 0);  
         UnikeyFilter((unsigned char)ch);
     }
 

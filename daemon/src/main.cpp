@@ -128,35 +128,41 @@ static void setup_signal_handlers() {
  * Trả về 0 nếu không phải ký tự ASCII thường.
  */
 #ifdef HAVE_LIBEVDEV
-static char keycode_to_char(int keycode, bool shift) {
+static char keycode_to_char(int keycode, bool shift, bool capslock) {
+    bool is_alpha = (keycode >= KEY_A && keycode <= KEY_Z);
+    bool effective_upper = shift;
+    if (is_alpha && capslock) {
+        effective_upper = !shift;
+    }
+
     switch (keycode) {
         // Chữ cái a-z
-        case KEY_A: return shift ? 'A' : 'a';
-        case KEY_B: return shift ? 'B' : 'b';
-        case KEY_C: return shift ? 'C' : 'c';
-        case KEY_D: return shift ? 'D' : 'd';
-        case KEY_E: return shift ? 'E' : 'e';
-        case KEY_F: return shift ? 'F' : 'f';
-        case KEY_G: return shift ? 'G' : 'g';
-        case KEY_H: return shift ? 'H' : 'h';
-        case KEY_I: return shift ? 'I' : 'i';
-        case KEY_J: return shift ? 'J' : 'j';
-        case KEY_K: return shift ? 'K' : 'k';
-        case KEY_L: return shift ? 'L' : 'l';
-        case KEY_M: return shift ? 'M' : 'm';
-        case KEY_N: return shift ? 'N' : 'n';
-        case KEY_O: return shift ? 'O' : 'o';
-        case KEY_P: return shift ? 'P' : 'p';
-        case KEY_Q: return shift ? 'Q' : 'q';
-        case KEY_R: return shift ? 'R' : 'r';
-        case KEY_S: return shift ? 'S' : 's';
-        case KEY_T: return shift ? 'T' : 't';
-        case KEY_U: return shift ? 'U' : 'u';
-        case KEY_V: return shift ? 'V' : 'v';
-        case KEY_W: return shift ? 'W' : 'w';
-        case KEY_X: return shift ? 'X' : 'x';
-        case KEY_Y: return shift ? 'Y' : 'y';
-        case KEY_Z: return shift ? 'Z' : 'z';
+        case KEY_A: return effective_upper ? 'A' : 'a';
+        case KEY_B: return effective_upper ? 'B' : 'b';
+        case KEY_C: return effective_upper ? 'C' : 'c';
+        case KEY_D: return effective_upper ? 'D' : 'd';
+        case KEY_E: return effective_upper ? 'E' : 'e';
+        case KEY_F: return effective_upper ? 'F' : 'f';
+        case KEY_G: return effective_upper ? 'G' : 'g';
+        case KEY_H: return effective_upper ? 'H' : 'h';
+        case KEY_I: return effective_upper ? 'I' : 'i';
+        case KEY_J: return effective_upper ? 'J' : 'j';
+        case KEY_K: return effective_upper ? 'K' : 'k';
+        case KEY_L: return effective_upper ? 'L' : 'l';
+        case KEY_M: return effective_upper ? 'M' : 'm';
+        case KEY_N: return effective_upper ? 'N' : 'n';
+        case KEY_O: return effective_upper ? 'O' : 'o';
+        case KEY_P: return effective_upper ? 'P' : 'p';
+        case KEY_Q: return effective_upper ? 'Q' : 'q';
+        case KEY_R: return effective_upper ? 'R' : 'r';
+        case KEY_S: return effective_upper ? 'S' : 's';
+        case KEY_T: return effective_upper ? 'T' : 't';
+        case KEY_U: return effective_upper ? 'U' : 'u';
+        case KEY_V: return effective_upper ? 'V' : 'v';
+        case KEY_W: return effective_upper ? 'W' : 'w';
+        case KEY_X: return effective_upper ? 'X' : 'x';
+        case KEY_Y: return effective_upper ? 'Y' : 'y';
+        case KEY_Z: return effective_upper ? 'Z' : 'z';
         // Số
         case KEY_1: return shift ? '!' : '1';
         case KEY_2: return shift ? '@' : '2';
@@ -321,6 +327,13 @@ int main(int argc, char* argv[]) {
             std::cout << "[vnxkey] EMERGENCY STOP activated! Ungrabbing all keyboards." << std::endl;
             for (auto& evdev : evdev_list) evdev->ungrab();
             currently_grabbed = false;
+            
+            // [CRITICAL] Reset toàn bộ trạng thái để tránh kẹt phím khi bật lại
+            physical_pressed_keys.clear();
+            shift_pressed = false;
+            ctrl_pressed = false;
+            alt_pressed = false;
+            engine.reset();
         } else if (!em_stop && !currently_grabbed) {
             std::cout << "[vnxkey] EMERGENCY STOP deactivated. Re-grabbing keyboards." << std::endl;
             for (auto& evdev : evdev_list) evdev->grab();
@@ -475,8 +488,17 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
 
+                // Nếu là phím repeat (giữ phím), passthrough trực tiếp để không đẩy vào engine gây lỗi lặp ký tự
+                if (kev.value == 2) {
+                    uinput.emit_key(kev.keycode, kev.value);
+                    continue;
+                }
+
+                // Giao cho VietEngine xử lý
+                bool is_capslock = evdev->is_capslock_on();
+                
                 // Chuyển keycode → char
-                char ch = keycode_to_char(kev.keycode, shift_pressed);
+                char ch = keycode_to_char(kev.keycode, shift_pressed, is_capslock);
 
                 if (ch == 0) {
                     // Không phải ASCII (F1, Home, mũi tên...) → passthrough
@@ -485,26 +507,32 @@ int main(int argc, char* argv[]) {
                 }
 
                 // [WORKING][CRITICAL] Đọc trạng thái excluded apps từ tmpfs (do GUI ghi xuống) - DO NOT MODIFY UNLESS NECESSARY
-                bool is_excluded = false;
-                std::ifstream ext_file("/dev/shm/vnxkey_excluded");
-                if (ext_file.is_open()) {
-                    std::string content;
-                    ext_file >> content;
-                    if (content == "1") {
-                        is_excluded = true;
+                static bool cached_is_excluded = false;
+                static auto last_exclude_check = std::chrono::steady_clock::now();
+                auto now = std::chrono::steady_clock::now();
+
+                // Chỉ check lại file mỗi 500ms để giảm overhead
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last_exclude_check).count() > 500) {
+                    last_exclude_check = now;
+                    cached_is_excluded = false;
+                    std::ifstream ext_file("/dev/shm/vnxkey_excluded");
+                    if (ext_file.is_open()) {
+                        std::string content;
+                        ext_file >> content;
+                        if (content == "1") {
+                            cached_is_excluded = true;
+                        }
                     }
                 }
 
-                if (is_excluded) {
+                if (cached_is_excluded) {
                     // Nếu cửa sổ đang active bị ngoại trừ, bỏ qua buffer và gửi phím trực tiếp
                     engine.reset();
                     uinput.emit_key(kev.keycode, kev.value);
                     continue;
                 }
 
-                // Giao cho VietEngine xử lý. Truyền thêm trạng thái Capslock để engine viết hoa đúng.
-                bool is_capslock = evdev->is_capslock_on();
-                auto actions = engine.process_key(ch, is_capslock);
+                auto actions = engine.process_key(ch);
 
                 // Thực thi actions
                 bool needs_release = false;

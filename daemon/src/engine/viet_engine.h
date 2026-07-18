@@ -46,7 +46,12 @@ public:
     VietEngine(const VietEngine&) = delete;
     VietEngine& operator=(const VietEngine&) = delete;
 
-    std::vector<EngineAction> process_key(char ch, bool is_capslock_on = false);
+    /**
+     * @brief Xử lý một ký tự ASCII đầu vào (đã được map từ keycode và phân giải hoa/thường)
+     * @param ch Ký tự ASCII (ví dụ: 'a', 'A', '1', space...)
+     * @return Danh sách các EngineAction cần thực hiện
+     */
+    std::vector<EngineAction> process_key(char ch);
     void reset();
     std::vector<EngineAction> flush(int chars_committed = -1);
 
